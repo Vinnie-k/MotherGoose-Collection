@@ -3,8 +3,6 @@ import { NextRequest, NextResponse } from 'next/server'
 export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Only protect admin UI pages
-  // Skip: login page, API routes, Next.js internals, static files
   if (
     pathname === '/admin/login' ||
     pathname.startsWith('/api/') ||
@@ -27,7 +25,7 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
-  // Verify token (inline to avoid import issues in middleware edge runtime)
+  // Verify token
   try {
     const parts = token.split('.')
     if (parts.length !== 3) throw new Error('bad token')
