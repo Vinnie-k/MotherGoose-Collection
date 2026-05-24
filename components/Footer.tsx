@@ -83,7 +83,7 @@ export default function Footer() {
             <h4 style={{ color: '#C9A84C', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 20 }}>Visit Us</h4>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <p style={{ color: 'rgba(245,242,236,0.45)', fontSize: '0.85rem', lineHeight: 1.6 }}>
-                Westlands, Nairobi<br />Kenya
+                Nairobi, Kenya
               </p>
               <p style={{ color: 'rgba(245,242,236,0.45)', fontSize: '0.85rem' }}>+254 759 490 008</p>
               <p style={{ color: 'rgba(245,242,236,0.3)', fontSize: '0.75rem', marginTop: 4 }}>Mon – Sat: 9am – 6pm EAT</p>

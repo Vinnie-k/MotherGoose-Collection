@@ -75,11 +75,11 @@ export default function HomePage() {
           <p style={{ color: '#C9A84C', fontSize: '0.65rem', letterSpacing: '0.4em', textTransform: 'uppercase', marginBottom: 8, fontWeight: 500 }}>Explore</p>
           <h2 className="font-display" style={{ color: '#F5F2EC', fontSize: 'clamp(2rem, 4vw, 3rem)' }}>Shop by Category</h2>
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: 12 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }} className="category-grid">
           {CATEGORY_IMAGES.map((cat, i) => (
             <Link key={cat.slug} href={`/category/${cat.slug}`}
               className={`stagger-${i + 1}`}
-              style={{ display: 'block', textDecoration: 'none', position: 'relative', overflow: 'hidden', aspectRatio: '3/4', transition: 'all 0.3s' }}
+              style={{ display: 'block', textDecoration: 'none', position: 'relative', overflow: 'hidden', aspectRatio: '2/3', transition: 'all 0.3s' }}
               onMouseEnter={e => { const img = e.currentTarget.querySelector('.cat-img') as HTMLElement; if (img) img.style.transform = 'scale(1.08)' }}
               onMouseLeave={e => { const img = e.currentTarget.querySelector('.cat-img') as HTMLElement; if (img) img.style.transform = 'scale(1)' }}>
               <Image className="cat-img" src={cat.image} alt={cat.label}

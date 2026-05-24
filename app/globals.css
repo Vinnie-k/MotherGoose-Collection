@@ -129,3 +129,10 @@ body {
   0%   { background-position: -200% 0; }
   100% { background-position:  200% 0; }
 }
+
+/* Category grid responsive */
+@media (min-width: 1024px) {
+  .category-grid {
+    grid-template-columns: repeat(6, 1fr) !important;
+  }
+}
