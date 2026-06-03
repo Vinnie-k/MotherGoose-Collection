@@ -33,7 +33,9 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault()
     if (product.stock === 0) return
-    addItem(product, 1)
+    const primaryImage = imgSrc || (product.images && product.images[0]) || FALLBACK
+    const matchingColor = Object.entries(product.colorImages || {}).find(([, images]) => images.includes(primaryImage))?.[0]
+    addItem(product, 1, undefined, matchingColor, primaryImage)
     setAdded(true)
     toast(`${product.name} added to bag`, 'success')
     setTimeout(() => setAdded(false), 1800)
@@ -55,14 +57,14 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
       onMouseLeave={e => { e.currentTarget.style.transform = 'none'; e.currentTarget.style.boxShadow = 'none' }}>
 
       {/* Image */}
-      <div className="product-card-img" style={{ position: 'relative', aspectRatio: '3/4', overflow: 'hidden', background: 'rgba(255,255,255,0.04)' }}>
+      <div className="product-card-img" style={{ position: 'relative', aspectRatio: '1/1', overflow: 'hidden', background: 'rgba(255,255,255,0.04)' }}>
         <Image
           src={imgSrc}
           alt={product.name}
           fill
           sizes="(max-width: 768px) 50vw, (max-width: 1280px) 25vw, 20vw"
           onError={() => setImgError(true)}
-          style={{ objectFit: 'cover', transition: 'transform 0.7s ease' }}
+          style={{ objectFit: 'contain', transition: 'transform 0.7s ease', padding: '16px' }}
           className="product-img"
         />
 

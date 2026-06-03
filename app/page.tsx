@@ -46,9 +46,6 @@ export default function HomePage() {
 
         <div style={{ position: 'relative', zIndex: 10, maxWidth: 1280, margin: '0 auto', padding: '128px 24px' }}>
           <div style={{ maxWidth: 600 }}>
-            <p style={{ color: '#C9A84C', fontSize: '0.65rem', letterSpacing: '0.5em', textTransform: 'uppercase', marginBottom: 24, fontWeight: 500 }} className="stagger-1">
-              New Collection 2025
-            </p>
             <h1 className="font-display stagger-2" style={{ fontSize: 'clamp(3.5rem, 8vw, 6rem)', fontWeight: 700, color: '#F5F2EC', lineHeight: 0.9, marginBottom: 32 }}>
               Dress<br />
               <span style={{ fontStyle: 'italic', color: '#C9A84C' }}>Without</span><br />

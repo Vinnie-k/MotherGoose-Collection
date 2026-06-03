@@ -51,17 +51,22 @@ export async function POST(request: NextRequest) {
       rating: Number(body.rating) || 0,
       review_count: Number(body.review_count) || 0,
       tags: Array.isArray(body.tags) ? body.tags : [],
+      colors: Array.isArray(body.colors) ? body.colors : [],
+      colorImages: body.colorImages || null,
+      admin_source_tag: body.admin_source_tag ? String(body.admin_source_tag).trim() : null,
       featured: Boolean(body.featured),
       new_arrival: Boolean(body.new_arrival),
       gender: body.gender ?? null,
+      sizes: Array.isArray(body.sizes) ? body.sizes : null,
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
     }
     const saved = await addProduct(product)
     return NextResponse.json({ product: saved }, { status: 201 })
   } catch (err) {
-    console.error('[Admin POST /products]', err)
-    return NextResponse.json({ error: 'Failed to create product' }, { status: 500 })
+    const errMsg = err instanceof Error ? err.message : String(err)
+    console.error('[Admin POST /products] Error:', errMsg)
+    return NextResponse.json({ error: `Failed to save product: ${errMsg}` }, { status: 500 })
   }
 }
 
@@ -81,9 +86,13 @@ export async function PUT(request: NextRequest) {
       ...(body.images && { images: body.images }),
       ...(body.stock !== undefined && { stock: safeNum(body.stock) }),
       ...(body.tags && { tags: Array.isArray(body.tags) ? body.tags : body.tags.split(',').map((t: string) => t.trim()) }),
+      ...(body.colors && { colors: Array.isArray(body.colors) ? body.colors : body.colors.split(',').map((c: string) => c.trim()) }),
+      ...(body.colorImages && { colorImages: body.colorImages }),
+      admin_source_tag: body.admin_source_tag ? String(body.admin_source_tag).trim() : null,
       featured: Boolean(body.featured),
       new_arrival: Boolean(body.new_arrival),
       gender: body.gender ?? null,
+      sizes: Array.isArray(body.sizes) ? body.sizes : null,
       updated_at: new Date().toISOString(),
     }
     const updated = await updateProduct(body.id, updates)

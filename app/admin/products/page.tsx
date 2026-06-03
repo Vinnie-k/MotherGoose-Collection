@@ -32,7 +32,9 @@ export default function AdminProductsPage() {
     }
   }, [])
 
-  useEffect(() => { load() }, [load])
+  useEffect(() => {
+    load()
+  }, [])
 
   const handleDelete = async (product: Product) => {
     setDeleting(product.id)

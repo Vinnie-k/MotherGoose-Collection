@@ -22,13 +22,9 @@ const STATUS_TEXT: Record<string, string> = {
 const ALL_STATUSES = ['confirmed', 'processing', 'dispatched', 'delivered', 'cancelled']
 
 const DELIVERY_LABELS: Record<string, string> = {
-  standard: 'Standard (3–5 days)',
-  express:  'Express (1–2 days)',
   same_day: 'Same-Day',
 }
 const DELIVERY_COLORS: Record<string, string> = {
-  standard: 'rgba(245,242,236,0.4)',
-  express:  '#C9A84C',
   same_day: '#f87171',
 }
 
@@ -118,9 +114,10 @@ export default function AdminOrdersPage() {
   }
 
   const openWhatsApp = (order: Order) => {
-    const itemLines = order.items.map(i =>
-      `• ${i.name} x${i.quantity} — ${formatPrice(i.price * i.quantity)}`
-    ).join('\n')
+    const itemLines = order.items.map(i => {
+      let details = `${i.name}${i.color ? ` (Color: ${i.color})` : ''}${i.size ? ` (Size: ${i.size})` : ''}`
+      return `• ${details} x${i.quantity} — ${formatPrice(i.price * i.quantity)}`
+    }).join('\n')
     const msg = [
       `📦 *Order Update — ${order.orderNumber}*`,
       ``,
@@ -314,8 +311,8 @@ export default function AdminOrdersPage() {
                     {/* Delivery Option */}
                     <div style={{ minWidth: 130 }}>
                       <p style={{ color: 'rgba(245,242,236,0.3)', fontSize: '0.6rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>Delivery</p>
-                      <span style={{ color: DELIVERY_COLORS[order.deliveryOption ?? 'standard'] || 'rgba(245,242,236,0.4)', fontSize: '0.75rem', fontWeight: 600 }}>
-                        {DELIVERY_LABELS[order.deliveryOption ?? 'standard'] || 'Standard'}
+                      <span style={{ color: order.deliveryOption === 'same_day' ? DELIVERY_COLORS.same_day : 'rgba(245,242,236,0.3)', fontSize: '0.75rem', fontWeight: 600 }}>
+                        {order.deliveryOption ? DELIVERY_LABELS[order.deliveryOption] : 'Not Selected'}
                       </span>
                     </div>
 
@@ -363,12 +360,16 @@ export default function AdminOrdersPage() {
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                           {order.items.map((item, i) => (
                             <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                              {item.image && (
-                                <Image src={item.image || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=100&q=60'} alt={item.name} width={40} height={40} style={{ objectFit: 'cover', background: 'rgba(255,255,255,0.04)' }} />
+                              {(item.colorImage || item.image) && (
+                                <Image src={item.colorImage || item.image || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=100&q=60'} alt={item.name} width={40} height={40} style={{ objectFit: 'cover', background: 'rgba(255,255,255,0.04)' }} />
                               )}
                               <div style={{ flex: 1 }}>
                                 <p style={{ color: '#F5F2EC', fontSize: '0.8rem' }}>{item.name}</p>
-                                <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.7rem' }}>Qty: {item.quantity} × {formatPrice(item.price)}</p>
+                                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
+                                  {item.color && <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.65rem', background: 'rgba(255,255,255,0.05)', padding: '2px 6px' }}>Color: {item.color}</p>}
+                                  {item.size && <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.65rem', background: 'rgba(255,255,255,0.05)', padding: '2px 6px' }}>Size: {item.size}</p>}
+                                </div>
+                                <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.7rem', marginTop: 2 }}>Qty: {item.quantity} × {formatPrice(item.price)}</p>
                               </div>
                               <span style={{ color: 'rgba(245,242,236,0.6)', fontSize: '0.8rem' }}>{formatPrice(item.price * item.quantity)}</span>
                             </div>
@@ -381,7 +382,7 @@ export default function AdminOrdersPage() {
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', marginBottom: 8 }}>
                             <span style={{ color: 'rgba(245,242,236,0.4)' }}>
-                              Shipping {order.deliveryOption && order.deliveryOption !== 'standard' ? `(${DELIVERY_LABELS[order.deliveryOption]})` : ''}
+                              Shipping {order.deliveryOption ? `(${DELIVERY_LABELS[order.deliveryOption]})` : ''}
                             </span>
                             <span style={{ color: 'rgba(245,242,236,0.6)' }}>{order.shipping === 0 ? 'Free' : formatPrice(order.shipping)}</span>
                           </div>
@@ -396,13 +397,11 @@ export default function AdminOrdersPage() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                         <div style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.15)', padding: '12px 16px' }}>
                           <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 6 }}>Delivery Method</p>
-                          <p style={{ color: DELIVERY_COLORS[order.deliveryOption ?? 'standard'], fontSize: '0.875rem', fontWeight: 700 }}>
-                            {DELIVERY_LABELS[order.deliveryOption ?? 'standard'] || 'Standard Delivery'}
+                          <p style={{ color: order.deliveryOption === 'same_day' ? DELIVERY_COLORS.same_day : 'rgba(245,242,236,0.5)', fontSize: '0.875rem', fontWeight: 700 }}>
+                            {order.deliveryOption ? DELIVERY_LABELS[order.deliveryOption] : 'No delivery method selected'}
                           </p>
                           <p style={{ color: 'rgba(245,242,236,0.35)', fontSize: '0.72rem', marginTop: 2 }}>
-                            {order.deliveryOption === 'same_day' ? 'Nairobi only — order before 12 PM' :
-                             order.deliveryOption === 'express' ? 'Priority handling & expedited transit' :
-                             'Tracked via courier partner'}
+                            {order.deliveryOption === 'same_day' ? 'Nairobi only — order before 12 PM' : 'Delivery details unavailable'}
                           </p>
                         </div>
 

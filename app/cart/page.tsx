@@ -9,32 +9,16 @@ import { formatPrice } from '@/lib/format'
 
 type PaymentMethod = 'whatsapp'
 type CheckoutStep = 'cart' | 'info' | 'payment' | 'confirmation'
-type DeliveryOption = 'standard' | 'express' | 'same_day'
+type DeliveryOption = 'same_day' | null
 
-const DELIVERY_OPTIONS: { id: DeliveryOption; name: string; time: string; price: string; fee: (subtotal: number) => number; desc: string }[] = [
-  {
-    id: 'standard',
-    name: 'Standard Delivery',
-    time: '3–5 Business Days',
-    price: 'Free over Ksh 5,000 · Ksh 500 otherwise',
-    fee: (sub) => sub >= 5000 ? 0 : 500,
-    desc: 'Tracked via courier partners. Email update when dispatched.',
-  },
-  {
-    id: 'express',
-    name: 'Express Delivery',
-    time: '1–2 Business Days',
-    price: 'Ksh 1,500 flat rate',
-    fee: () => 1500,
-    desc: 'Priority handling & expedited transit. Ideal for urgent gifts.',
-  },
+const DELIVERY_OPTIONS: { id: Exclude<DeliveryOption, null>; name: string; time: string; price: string; fee: () => number; desc: string }[] = [
   {
     id: 'same_day',
     name: 'Same-Day Delivery',
     time: 'Same Day — Nairobi only',
-    price: 'Ksh 2,500 flat rate',
-    fee: () => 2500,
-    desc: 'Order before 12 PM, delivered the same day. Mon–Sat.',
+    price: 'Ksh 500 flat rate',
+    fee: () => 500,
+    desc: 'Order before 12 PM, delivered the same day. Available only in Nairobi. Mon–Sat.',
   },
 ]
 
@@ -62,7 +46,7 @@ export default function CartPage() {
   useEffect(() => { refreshStock() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [step, setStep] = useState<CheckoutStep>('cart')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('whatsapp')
-  const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>('standard')
+  const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>(null)
   const [placingOrder, setPlacingOrder] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({})
@@ -71,8 +55,8 @@ export default function CartPage() {
     address: '', city: '', zip: '', phone: '',
   })
 
-  const selectedDelivery = DELIVERY_OPTIONS.find(o => o.id === deliveryOption)!
-  const shippingFee = selectedDelivery.fee(state.total)
+  const selectedDelivery = DELIVERY_OPTIONS.find(o => o.id === deliveryOption) || null
+  const shippingFee = selectedDelivery ? selectedDelivery.fee() : 0
   const total = state.total + shippingFee
 
   const f = (key: keyof FormData, val: string) => {
@@ -102,13 +86,20 @@ export default function CartPage() {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            items: state.items.map((i) => ({
-              productId: i.product.id,
-              name: i.product.name,
-              quantity: i.quantity,
-              price: i.product.price,
-              image: i.product.images[0] || '',
-            })),
+            items: state.items.map((i) => {
+              // Get the color-specific image if color is selected, else use default
+              const colorImage = i.color && i.product.colorImages?.[i.color]?.[0]
+              return {
+                productId: i.product.id,
+                name: i.product.name,
+                quantity: i.quantity,
+                price: i.product.price,
+                image: i.product.images[0] || '',
+                size: i.size,
+                color: i.color,
+                colorImage,
+              }
+            }),
             customer: {
               firstName: form.firstName.trim(),
               lastName: form.lastName.trim(),
@@ -132,9 +123,10 @@ export default function CartPage() {
         const orderNum = data.order?.orderNumber || ('WA-' + Date.now().toString().slice(-6))
 
         const storeNumber = '254759490008'
-        const itemLines = state.items.map(i =>
-          `• ${i.product.name}${i.size ? ` (Size: ${i.size})` : ''} x${i.quantity} — ${formatPrice(i.product.price * i.quantity)}`
-        ).join('\n')
+        const itemLines = state.items.map(i => {
+          let details = `${i.product.name}${i.color ? ` (Color: ${i.color})` : ''}${i.size ? ` (Size: ${i.size})` : ''}`
+          return `• ${details} x${i.quantity} — ${formatPrice(i.product.price * i.quantity)}`
+        }).join('\n')
         const deliveryLabel = DELIVERY_OPTIONS.find(o => o.id === deliveryOption)?.name || 'Standard Delivery'
         const message = [
           `🛍️ *New Order — Mothergoose Collection*`,
@@ -158,23 +150,6 @@ export default function CartPage() {
         ].join('\n')
 
         window.open(`https://wa.me/${storeNumber}?text=${encodeURIComponent(message)}`, '_blank')
-
-        if (form.email) {
-          fetch('/api/send-order-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: form.email,
-              firstName: form.firstName,
-              orderItems: state.items.map((i) => ({ name: i.product.name, quantity: i.quantity, price: i.product.price })),
-              total,
-              paymentMethod: 'whatsapp',
-              address: form.address,
-              city: form.city,
-              orderNumber: orderNum,
-            }),
-          }).catch(() => {})
-        }
 
         setOrderNumber(orderNum)
         clearCart()
@@ -222,22 +197,6 @@ export default function CartPage() {
       const data = await res.json()
       if (res.ok && data.order) {
         setOrderNumber(data.order.orderNumber)
-        if (form.email) {
-          fetch('/api/send-order-email', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              to: form.email,
-              firstName: form.firstName,
-              orderItems: state.items.map((i) => ({ name: i.product.name, quantity: i.quantity, price: i.product.price })),
-              total,
-              paymentMethod,
-              address: form.address,
-              city: form.city,
-              orderNumber: data.order.orderNumber,
-            }),
-          }).catch(() => {})
-        }
         clearCart()
         setStep('confirmation')
       } else {
@@ -299,6 +258,7 @@ export default function CartPage() {
           </div>
         )}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
+          <a href={`/api/orders/receipt?orderNumber=${orderNumber}`} target="_blank" rel="noopener noreferrer" className="btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>View Receipt</a>
           <Link href="/track-order" className="btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>Track Order</Link>
           <Link href="/products" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>Continue Shopping <ArrowRight size={16} /></Link>
         </div>
@@ -345,27 +305,39 @@ export default function CartPage() {
             {step === 'cart' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
                 {state.items.map((item) => (
-                  <div key={`${item.product.id}-${item.size}`} style={{ display: 'flex', gap: 20, padding: 20, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div key={`${item.product.id}-${item.size}-${item.color}`} style={{ display: 'flex', gap: 20, padding: 20, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ width: 88, height: 100, overflow: 'hidden', flexShrink: 0, position: 'relative', background: 'rgba(255,255,255,0.04)' }}>
-                      <Image src={item.product.images[0] || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&q=60'} alt={item.product.name} fill sizes="80px" style={{ objectFit: 'cover' }} />
+                      <Image src={
+    item.displayImage ||
+    (item.color && item.product.colorImages?.[item.color]?.[0]) ||
+    item.product.images[0]
+  }
+  alt={item.product.name}
+  fill
+  sizes="80px"
+  style={{ objectFit: 'cover' }}
+/>
                     </div>
                     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 8 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
                         <div>
                           <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.65rem', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 3 }}>{item.product.category}</p>
                           <p style={{ color: '#F5F2EC', fontWeight: 500 }}>{item.product.name}</p>
-                          {item.size && <p style={{ color: 'rgba(245,242,236,0.35)', fontSize: '0.75rem', marginTop: 2 }}>Size: {item.size}</p>}
+                          <div style={{ display: 'flex', gap: 12, marginTop: 4, fontSize: '0.75rem', color: 'rgba(245,242,236,0.35)' }}>
+                            {item.color && <span>Color: {item.color}</span>}
+                            {item.size && <span>Size: {item.size}</span>}
+                          </div>
                         </div>
-                        <button onClick={() => removeItem(item.product.id)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.2)', padding: 4, flexShrink: 0 }}
+                        <button onClick={() => removeItem(item.product.id, item.size, item.color)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.2)', padding: 4, flexShrink: 0 }}
                           onMouseEnter={e=>(e.currentTarget.style.color='#f87171')} onMouseLeave={e=>(e.currentTarget.style.color='rgba(245,242,236,0.2)')}>
                           <Trash2 size={15} />
                         </button>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 'auto' }}>
                         <div style={{ display: 'flex', alignItems: 'center', border: '1px solid rgba(255,255,255,0.1)' }}>
-                          <button onClick={() => updateQuantity(item.product.id, item.quantity - 1)} style={{ width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={13}/></button>
+                          <button onClick={() => updateQuantity(item.product.id, item.quantity - 1, item.size, item.color)} style={{ width: 32, height: 32, background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Minus size={13}/></button>
                           <span style={{ width: 32, height: 32, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#F5F2EC', fontSize: '0.875rem' }}>{item.quantity}</span>
-                          <button onClick={() => updateQuantity(item.product.id, item.quantity + 1)} disabled={item.quantity >= item.product.stock} style={{ width: 32, height: 32, background: 'none', border: 'none', cursor: item.quantity >= item.product.stock ? 'not-allowed' : 'pointer', color: item.quantity >= item.product.stock ? 'rgba(245,242,236,0.15)' : 'rgba(245,242,236,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={13}/></button>
+                          <button onClick={() => updateQuantity(item.product.id, item.quantity + 1, item.size, item.color)} disabled={item.quantity >= item.product.stock} style={{ width: 32, height: 32, background: 'none', border: 'none', cursor: item.quantity >= item.product.stock ? 'not-allowed' : 'pointer', color: item.quantity >= item.product.stock ? 'rgba(245,242,236,0.15)' : 'rgba(245,242,236,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><Plus size={13}/></button>
                         </div>
                         <span className="font-display" style={{ color: '#F5F2EC', fontSize: '1.1rem' }}>{formatPrice(item.product.price * item.quantity)}</span>
                       </div>
@@ -448,12 +420,12 @@ export default function CartPage() {
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                     {DELIVERY_OPTIONS.map((opt) => {
                       const isSelected = deliveryOption === opt.id
-                      const fee = opt.fee(state.total)
+                      const fee = opt.fee()
                       return (
                         <button
                           key={opt.id}
                           type="button"
-                          onClick={() => setDeliveryOption(opt.id)}
+                          onClick={() => setDeliveryOption(deliveryOption === opt.id ? null : opt.id)}
                           style={{
                             background: isSelected ? 'rgba(201,168,76,0.07)' : 'rgba(255,255,255,0.02)',
                             border: `1px solid ${isSelected ? 'rgba(201,168,76,0.45)' : 'rgba(255,255,255,0.08)'}`,
@@ -527,15 +499,17 @@ export default function CartPage() {
                 </div>
 
                 {/* Delivery summary on payment step */}
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.15)' }}>
-                  <Truck size={15} style={{ color: '#C9A84C', flexShrink: 0 }} />
-                  <div style={{ flex: 1 }}>
-                    <span style={{ color: 'rgba(245,242,236,0.5)', fontSize: '0.72rem' }}>Delivery: </span>
-                    <span style={{ color: '#C9A84C', fontSize: '0.8rem', fontWeight: 600 }}>{selectedDelivery.name}</span>
-                    <span style={{ color: 'rgba(245,242,236,0.35)', fontSize: '0.72rem' }}> · {selectedDelivery.time}</span>
+                {selectedDelivery && (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.15)' }}>
+                    <Truck size={15} style={{ color: '#C9A84C', flexShrink: 0 }} />
+                    <div style={{ flex: 1 }}>
+                      <span style={{ color: 'rgba(245,242,236,0.5)', fontSize: '0.72rem' }}>Delivery: </span>
+                      <span style={{ color: '#C9A84C', fontSize: '0.8rem', fontWeight: 600 }}>{selectedDelivery.name}</span>
+                      <span style={{ color: 'rgba(245,242,236,0.35)', fontSize: '0.72rem' }}> · {selectedDelivery.time}</span>
+                    </div>
+                    <button onClick={() => setStep('info')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.35)', fontSize: '0.7rem', textDecoration: 'underline', padding: 0 }}>Change</button>
                   </div>
-                  <button onClick={() => setStep('info')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.35)', fontSize: '0.7rem', textDecoration: 'underline', padding: 0 }}>Change</button>
-                </div>
+                )}
 
                 {/* Payment Method */}
                 <div style={{ background: 'rgba(37,211,102,0.05)', border: '1px solid rgba(37,211,102,0.25)', padding: 20 }}>
@@ -576,7 +550,18 @@ export default function CartPage() {
               {state.items.map((item) => (
                 <div key={`${item.product.id}-${item.size}`} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <div style={{ width: 44, height: 44, overflow: 'hidden', flexShrink: 0, position: 'relative', background: 'rgba(255,255,255,0.04)' }}>
-                    <Image src={item.product.images[0] || 'https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=200&q=60'} alt={item.product.name} fill sizes="64px" style={{ objectFit: 'cover' }} />
+                    <Image
+  src={
+    item.color &&
+    item.product.colorImages?.[item.color]?.[0]
+      ? item.product.colorImages[item.color][0]
+      : item.product.images[0]
+  }
+  alt={item.product.name}
+  fill
+  sizes="80px"
+  style={{ objectFit: 'cover' }}
+/>
                     <span style={{ position: 'absolute', top: -6, right: -6, background: '#C9A84C', color: '#0A0A0F', fontSize: '0.6rem', fontWeight: 700, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>{item.quantity}</span>
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
@@ -592,19 +577,15 @@ export default function CartPage() {
                 <span style={{ color: 'rgba(245,242,236,0.5)' }}>Subtotal</span>
                 <span style={{ color: '#F5F2EC' }}>{formatPrice(state.total)}</span>
               </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                <span style={{ color: 'rgba(245,242,236,0.5)' }}>
-                  Shipping
-                  {deliveryOption !== 'standard' && (
-                    <span style={{ color: 'rgba(201,168,76,0.6)', fontSize: '0.68rem', marginLeft: 6 }}>
-                      ({selectedDelivery.name})
-                    </span>
-                  )}
-                </span>
-                <span style={{ color: shippingFee === 0 ? '#4ade80' : '#F5F2EC' }}>{shippingFee === 0 ? 'Free' : formatPrice(shippingFee)}</span>
-              </div>
-              {deliveryOption === 'standard' && shippingFee > 0 && (
-                <p style={{ color: 'rgba(245,242,236,0.3)', fontSize: '0.7rem' }}>Free shipping on orders over Ksh 5,000</p>
+              {selectedDelivery && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                  <span style={{ color: 'rgba(245,242,236,0.5)' }}>
+                    {selectedDelivery.name}
+                  </span>
+                  <span style={{ color: '#F5F2EC' }}>
+                    {formatPrice(shippingFee)}
+                  </span>
+                </div>
               )}
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12, marginTop: 4 }}>
                 <span className="font-display" style={{ color: '#F5F2EC', fontSize: '1.25rem' }}>Total</span>

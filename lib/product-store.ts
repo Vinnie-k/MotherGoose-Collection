@@ -65,16 +65,26 @@ export async function saveProducts(products: Product[]): Promise<void> {
   // 1. Try Supabase (upsert all)
   const supabase = await getSupabase()
   if (supabase && await productsTableExists(supabase)) {
-    const { error } = await supabase.from('products').upsert(products)
-    if (!error) return
+    try {
+      const { error } = await supabase.from('products').upsert(products)
+      if (!error) {
+        console.log('[ProductStore] Products saved to Supabase')
+        return
+      }
+      console.warn('[ProductStore] Supabase upsert error:', error.message)
+    } catch (err) {
+      console.warn('[ProductStore] Supabase error:', err)
+    }
   }
 
-  // 2. Write to local file
+  // 2. Write to local file (always try this as fallback)
   try {
     await ensureDataDir()
     await fs.writeFile(STORE_PATH, JSON.stringify(products, null, 2), 'utf8')
+    console.log('[ProductStore] Products saved to local file:', STORE_PATH)
   } catch (err) {
-    console.warn('[ProductStore] Could not write to file store:', err)
+    console.error('[ProductStore] Could not write to file store:', err)
+    throw new Error('Failed to save products: ' + String(err))
   }
 }
 
@@ -82,12 +92,26 @@ export async function addProduct(product: Product): Promise<Product> {
   const supabase = await getSupabase()
   if (supabase && await productsTableExists(supabase)) {
     const { data, error } = await supabase.from('products').insert(product).select().single()
-    if (!error && data) return data as Product
+    if (!error && data) {
+      console.log('[ProductStore] Product saved to Supabase:', product.id)
+      return data as Product
+    }
+    if (error) {
+      console.warn('[ProductStore] Supabase insert error:', error.message)
+    }
   }
-  const products = await loadProducts()
-  const updated = [product, ...products]
-  await saveProducts(updated)
-  return product
+
+  // Fallback to local file storage
+  try {
+    const products = await loadProducts()
+    const updated = [product, ...products]
+    await saveProducts(updated)
+    console.log('[ProductStore] Product saved to local storage:', product.id)
+    return product
+  } catch (err) {
+    console.error('[ProductStore] Failed to save product:', err)
+    throw new Error('Failed to save product to local storage')
+  }
 }
 
 export async function updateProduct(id: string, updates: Partial<Product>): Promise<Product | null> {

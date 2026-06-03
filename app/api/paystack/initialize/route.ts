@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       if (product.stock < item.quantity) return NextResponse.json({ error: `Insufficient stock: ${product.name}` }, { status: 400 })
       subtotal += product.price * item.quantity
     }
-    const shipping = subtotal >= 5000 ? 0 : 500
+    const shipping = 500
     const total    = subtotal + shipping
 
     // Paystack expects amount in kobo (KES x 100)

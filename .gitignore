@@ -10,11 +10,14 @@
 # production
 /build
 
-# env files 
+# env files — NEVER commit these
 .env
 .env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
-# data store 
+# data store (orders/products — use a real DB in production)
 /data/orders.json
 /data/products.json
 
@@ -23,7 +26,7 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# local uploads 
+# local uploads (use Supabase Storage in production)
 /public/uploads/
 
 # OS
@@ -34,6 +37,7 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+
 # Local order store
 .order-store.json
 

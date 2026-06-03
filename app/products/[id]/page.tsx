@@ -45,9 +45,48 @@ export default function ProductDetailPage() {
   const { toast } = useToast()
   const [selectedImage, setSelectedImage] = useState(0)
   const [selectedSize, setSelectedSize] = useState('')
+  const [selectedColor, setSelectedColor] = useState('')
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
   const [activeTab, setActiveTab] = useState<'details'|'shipping'>('details')
+
+  // When the user picks a color, show that color's images first
+  // and reset the carousel to the first image so the chosen color is visible immediately.
+  useEffect(() => {
+    setSelectedImage(0)
+  }, [selectedColor])
+
+  // Build image list: show selected color images first (if any),
+  // then default images, then other color images — without duplicates.
+  const displayImages = (() => {
+    if (!product) return [] as string[]
+    const seen = new Set<string>()
+    const list: string[] = []
+
+    // 1) Selected color images first
+    if (selectedColor && product.colorImages?.[selectedColor]?.length) {
+      for (const img of product.colorImages[selectedColor]) {
+        if (!seen.has(img)) { seen.add(img); list.push(img) }
+      }
+    }
+
+    // 2) Default product images
+    for (const img of product.images || []) {
+      if (!seen.has(img)) { seen.add(img); list.push(img) }
+    }
+
+    // 3) Other color images
+    if (product.colorImages) {
+      for (const [color, imgs] of Object.entries(product.colorImages)) {
+        if (color === selectedColor) continue
+        for (const img of imgs || []) {
+          if (!seen.has(img)) { seen.add(img); list.push(img) }
+        }
+      }
+    }
+
+    return list
+  })()
 
   if (loading) {
     return (
@@ -76,7 +115,10 @@ export default function ProductDetailPage() {
     )
   }
 
-  const sizes = SIZES[product.category] ?? []
+  // Use sizes from product data if available, else fall back to static list
+  const sizes = product.sizes && product.sizes.length > 0
+    ? product.sizes
+    : (SIZES[product.category] ?? []).map(s => ({ size: s, stock: product.stock }))
   const wished = isWished(product.id)
   const discount = product.original_price
     ? Math.round(((product.original_price - product.price) / product.original_price) * 100)
@@ -84,7 +126,11 @@ export default function ProductDetailPage() {
 
   const handleAddToCart = () => {
     if (sizes.length > 0 && !selectedSize) { toast('Please select a size', 'error'); return }
-    addItem(product, quantity, selectedSize || undefined)
+    if (product.colors && product.colors.length > 0 && !selectedColor) { toast('Please select a color', 'error'); return }
+    const selectedSizeEntry = sizes.find(s => s.size === selectedSize)
+    if (selectedSizeEntry && selectedSizeEntry.stock === 0) { toast('This size is out of stock', 'error'); return }
+    const imageForCart = displayImages[selectedImage] || product.images[0] || ''
+    addItem(product, quantity, selectedSize || undefined, selectedColor || undefined, imageForCart)
     setAdded(true)
     toast(`${product.name} added to your bag`, 'success')
     setTimeout(() => setAdded(false), 2000)
@@ -128,7 +174,7 @@ export default function ProductDetailPage() {
                 const endX = e.changedTouches[0].clientX
                 const diff = startX - endX
                 if (Math.abs(diff) > 40) {
-                  if (diff > 0) setSelectedImage(i => Math.min(i + 1, product.images.length - 1))
+                  if (diff > 0) setSelectedImage(i => Math.min(i + 1, displayImages.length - 1))
                   else setSelectedImage(i => Math.max(i - 1, 0))
                 }
               }}>
@@ -136,14 +182,14 @@ export default function ProductDetailPage() {
               {/* Sliding strip */}
               <div style={{
                 display: 'flex',
-                width: `${product.images.length * 100}%`,
+                width: `${displayImages.length * 100}%`,
                 height: '100%',
-                transform: `translateX(-${selectedImage * (100 / product.images.length)}%)`,
+                transform: `translateX(-${selectedImage * (100 / displayImages.length)}%)`,
                 transition: 'transform 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
               }}>
-                {product.images.map((img, i) => (
-                  <div key={i} style={{ width: `${100 / product.images.length}%`, height: '100%', position: 'relative', flexShrink: 0 }}>
-                    <Image src={img} alt={`${product.name} — photo ${i + 1}`}
+                {displayImages.map((img, i) => (
+                  <div key={i} style={{ width: `${100 / displayImages.length}%`, height: '100%', position: 'relative', flexShrink: 0 }}>
+                    <Image src={img} alt={`${product?.name} — photo ${i + 1}`}
                       fill sizes="(max-width: 768px) 100vw, 50vw"
                       style={{ objectFit: 'cover' }} />
                   </div>
@@ -151,11 +197,11 @@ export default function ProductDetailPage() {
               </div>
 
               {/* Badges */}
-              {product.new_arrival && <span style={{ position: 'absolute', top: 16, left: 16, background: '#C9A84C', color: '#0A0A0F', fontSize: '0.65rem', fontWeight: 700, padding: '4px 10px', letterSpacing: '0.1em', textTransform: 'uppercase', zIndex: 2 }}>New Arrival</span>}
+              {product?.new_arrival && <span style={{ position: 'absolute', top: 16, left: 16, background: '#C9A84C', color: '#0A0A0F', fontSize: '0.65rem', fontWeight: 700, padding: '4px 10px', letterSpacing: '0.1em', textTransform: 'uppercase', zIndex: 2 }}>New Arrival</span>}
               {discount && <span style={{ position: 'absolute', top: 16, right: 16, background: '#dc2626', color: 'white', fontSize: '0.65rem', fontWeight: 700, padding: '4px 10px', letterSpacing: '0.1em', textTransform: 'uppercase', zIndex: 2 }}>-{discount}%</span>}
 
               {/* Arrow buttons — only shown when multiple images */}
-              {product.images.length > 1 && (
+              {displayImages.length > 1 && (
                 <>
                   <button
                     onClick={() => setSelectedImage(i => Math.max(i - 1, 0))}
@@ -174,16 +220,16 @@ export default function ProductDetailPage() {
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
                   </button>
                   <button
-                    onClick={() => setSelectedImage(i => Math.min(i + 1, product.images.length - 1))}
-                    disabled={selectedImage === product.images.length - 1}
+                    onClick={() => setSelectedImage(i => Math.min(i + 1, displayImages.length - 1))}
+                    disabled={selectedImage === displayImages.length - 1}
                     aria-label="Next image"
                     style={{
                       position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)',
                       width: 40, height: 40, borderRadius: '50%', zIndex: 2,
-                      background: selectedImage === product.images.length - 1 ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.6)',
+                      background: selectedImage === displayImages.length - 1 ? 'rgba(0,0,0,0.2)' : 'rgba(0,0,0,0.6)',
                       border: '1px solid rgba(255,255,255,0.15)',
-                      color: selectedImage === product.images.length - 1 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.9)',
-                      cursor: selectedImage === product.images.length - 1 ? 'not-allowed' : 'pointer',
+                      color: selectedImage === displayImages.length - 1 ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.9)',
+                      cursor: selectedImage === displayImages.length - 1 ? 'not-allowed' : 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       backdropFilter: 'blur(4px)', transition: 'all 0.2s',
                     }}>
@@ -192,7 +238,7 @@ export default function ProductDetailPage() {
 
                   {/* Dot indicators */}
                   <div style={{ position: 'absolute', bottom: 14, left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 6, zIndex: 2 }}>
-                    {product.images.map((_, i) => (
+                    {displayImages.map((_, i) => (
                       <button key={i} onClick={() => setSelectedImage(i)} aria-label={`Go to image ${i + 1}`}
                         style={{
                           width: selectedImage === i ? 20 : 6,
@@ -205,16 +251,16 @@ export default function ProductDetailPage() {
 
                   {/* Image counter */}
                   <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)', border: '1px solid rgba(255,255,255,0.1)', padding: '3px 10px', borderRadius: 20, zIndex: 2 }}>
-                    <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em' }}>{selectedImage + 1} / {product.images.length}</span>
+                    <span style={{ color: 'rgba(255,255,255,0.8)', fontSize: '0.65rem', fontWeight: 600, letterSpacing: '0.05em' }}>{selectedImage + 1} / {displayImages.length}</span>
                   </div>
                 </>
               )}
             </div>
 
             {/* Thumbnail strip */}
-            {product.images.length > 1 && (
+            {displayImages.length > 1 && (
               <div style={{ display: 'flex', gap: 8, overflowX: 'auto', paddingBottom: 4 }}>
-                {product.images.map((img, i) => (
+                {displayImages.map((img, i) => (
                   <button key={i} onClick={() => setSelectedImage(i)}
                     style={{
                       flexShrink: 0, width: 68, height: 68, overflow: 'hidden', padding: 0,
@@ -266,16 +312,42 @@ export default function ProductDetailPage() {
                   <Link href="/size-guide" style={{ color: '#C9A84C', fontSize: '0.7rem', textDecoration: 'underline' }}>Size Guide</Link>
                 </div>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                  {sizes.map(size => (
-                    <button key={size} onClick={() => setSelectedSize(size)}
+                  {sizes.map(({ size, stock: sizeStock }) => (
+                    <button key={size} onClick={() => sizeStock > 0 && setSelectedSize(size)}
+                      disabled={sizeStock === 0}
                       style={{
                         padding: '8px 16px', fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'uppercase',
-                        border: `1px solid ${selectedSize === size ? '#C9A84C' : 'rgba(255,255,255,0.1)'}`,
-                        background: selectedSize === size ? 'rgba(201,168,76,0.1)' : 'transparent',
-                        color: selectedSize === size ? '#C9A84C' : 'rgba(245,242,236,0.5)',
-                        cursor: 'pointer', transition: 'all 0.15s',
+                        border: `1px solid ${selectedSize === size ? '#C9A84C' : sizeStock === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.1)'}`,
+                        background: selectedSize === size ? 'rgba(201,168,76,0.1)' : sizeStock === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
+                        color: selectedSize === size ? '#C9A84C' : sizeStock === 0 ? 'rgba(245,242,236,0.15)' : 'rgba(245,242,236,0.5)',
+                        cursor: sizeStock === 0 ? 'not-allowed' : 'pointer',
+                        position: 'relative' as const,
+                        textDecoration: sizeStock === 0 ? 'line-through' : 'none',
+                        transition: 'all 0.15s',
                       }}>
                       {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Colors */}
+            {product.colors && product.colors.length > 0 && (
+              <div>
+                <p style={{ color: 'rgba(245,242,236,0.6)', fontSize: '0.7rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 10 }}>Color</p>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {product.colors.map((color) => (
+                    <button key={color} onClick={() => setSelectedColor(color)}
+                      style={{
+                        padding: '8px 16px', fontSize: '0.75rem', letterSpacing: '0.05em', textTransform: 'capitalize',
+                        border: `1px solid ${selectedColor === color ? '#C9A84C' : 'rgba(255,255,255,0.1)'}`,
+                        background: selectedColor === color ? 'rgba(201,168,76,0.1)' : 'transparent',
+                        color: selectedColor === color ? '#C9A84C' : 'rgba(245,242,236,0.5)',
+                        cursor: 'pointer',
+                        transition: 'all 0.15s',
+                      }}>
+                      {color}
                     </button>
                   ))}
                 </div>

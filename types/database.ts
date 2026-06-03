@@ -20,6 +20,10 @@ export interface Database {
           featured: boolean
           new_arrival: boolean
           gender: 'male' | 'female' | 'unisex' | null
+          sizes: { size: string; stock: number }[] | null
+          colors: string[]
+          colorImages: { [color: string]: string[] } | null
+          admin_source_tag: string | null
           created_at: string
           updated_at: string
         }

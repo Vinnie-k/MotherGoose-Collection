@@ -4,6 +4,8 @@ interface OrderItem {
   name: string
   quantity: number
   price: number
+  color?: string
+  size?: string
 }
 
 interface OrderEmailPayload {
@@ -22,7 +24,9 @@ function buildEmailHtml(data: OrderEmailPayload): string {
     .map(
       (item) => `
       <tr>
-        <td style="padding:10px 0;border-bottom:1px solid #1a1a2e;color:#b0a99a;font-size:14px;">${item.name} × ${item.quantity}</td>
+        <td style="padding:10px 0;border-bottom:1px solid #1a1a2e;color:#b0a99a;font-size:14px;">
+          ${item.name}${item.color ? ` (Color: ${item.color})` : ''}${item.size ? ` (Size: ${item.size})` : ''} × ${item.quantity}
+        </td>
         <td style="padding:10px 0;border-bottom:1px solid #1a1a2e;color:#e8d5a3;font-size:14px;text-align:right;">Ksh ${(item.price * item.quantity).toLocaleString('en-KE')}</td>
       </tr>`
     )
@@ -143,7 +147,8 @@ export async function POST(request: NextRequest) {
     const resend = new Resend(resendKey)
 
     const { data, error } = await resend.emails.send({
-      from: 'Mothergoose Collection <orders@mothergoosecollection.com>', // must be a verified domain in Resend
+      from: 'Mothergoose Collection <orders@mothergoosecollection254.co.ke>',
+      replyTo: 'mothergoosecollection1@gmail.com', // must be a verified domain in Resend
       to: body.to,
       subject: `Order Confirmed — Mothergoose Collection`,
       html: buildEmailHtml(body),

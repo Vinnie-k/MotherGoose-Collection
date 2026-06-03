@@ -5,7 +5,7 @@ interface StatusEmailPayload {
   firstName: string
   orderNumber: string
   status: 'dispatched' | 'delivered' | 'cancelled'
-  items: { name: string; quantity: number; price: number }[]
+  items: { name: string; quantity: number; price: number; color?: string; size?: string }[]
   total: number
   deliveryOption?: string
 }
@@ -47,7 +47,9 @@ function buildStatusEmailHtml(data: StatusEmailPayload): string {
   const cfg = statusConfig[data.status]
   const itemRows = data.items.map(item => `
     <tr>
-      <td style="padding:10px 0;border-bottom:1px solid #1a1a2e;color:#b0a99a;font-size:14px;">${item.name} x ${item.quantity}</td>
+      <td style="padding:10px 0;border-bottom:1px solid #1a1a2e;color:#b0a99a;font-size:14px;">
+        ${item.name}${item.color ? ` (Color: ${item.color})` : ''}${item.size ? ` (Size: ${item.size})` : ''} x ${item.quantity}
+      </td>
       <td style="padding:10px 0;border-bottom:1px solid #1a1a2e;color:#e8d5a3;font-size:14px;text-align:right;">Ksh ${(item.price * item.quantity).toLocaleString('en-KE')}</td>
     </tr>`).join('')
 
@@ -151,7 +153,8 @@ export async function POST(request: NextRequest) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'Mothergoose Collection <orders@mothergoosecollection.com>',
+      from: 'Mothergoose Collection <orders@mothergoosecollection254.co.ke>',
+      replyTo: 'mothergoosecollection1@gmail.com',
       to: body.to,
       subject: subjects[body.status],
       html: buildStatusEmailHtml(body),

@@ -8,6 +8,9 @@ export interface OrderItem {
   quantity: number
   price: number
   image: string
+  size?: string
+  color?: string
+  colorImage?: string
 }
 
 export interface Order {
@@ -31,7 +34,7 @@ export interface Order {
     city: string
     zip: string
   }
-  deliveryOption: 'standard' | 'express' | 'same_day'
+  deliveryOption: 'same_day' | null
   createdAt: string
   updatedAt: string
 }
@@ -105,7 +108,7 @@ function rowToOrder(row: Record<string, unknown>): Order {
       city:   row.address_city   as string,
       zip:    row.address_zip    as string,
     },
-    deliveryOption: (row.delivery_option as Order['deliveryOption']) ?? 'standard',
+    deliveryOption: (row.delivery_option as Order['deliveryOption']) ?? 'same_day',
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   }
@@ -191,7 +194,7 @@ export async function createOrder(
   const order: Order = {
     id:            crypto.randomUUID(),
     orderNumber:   generateOrderNumber(),
-    status:        'confirmed',
+    status:        'pending',
     paymentStatus: data.paymentMethod === 'whatsapp' ? 'whatsapp' : 'pending',
     ...data,
     createdAt: new Date().toISOString(),

@@ -10,8 +10,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
     const required = ['items', 'customer', 'address', 'total', 'paymentMethod']
-    const validDeliveryOptions = ['standard', 'express', 'same_day']
-    const deliveryOption = validDeliveryOptions.includes(body.deliveryOption) ? body.deliveryOption : 'standard'
+    const deliveryOption = body.deliveryOption === 'same_day' ? 'same_day' : null
     for (const field of required) {
       if (!body[field]) return NextResponse.json({ error: `Missing: ${field}` }, { status: 400 })
     }
@@ -28,14 +27,7 @@ export async function POST(request: NextRequest) {
       if (product.stock < item.quantity) return NextResponse.json({ error: `Insufficient stock for: ${product.name}` }, { status: 400 })
       serverSubtotal += product.price * item.quantity
     }
-    let shippingFee = 0
-    if (deliveryOption === 'express') {
-      shippingFee = 1500
-    } else if (deliveryOption === 'same_day') {
-      shippingFee = 2500
-    } else {
-      shippingFee = serverSubtotal >= 5000 ? 0 : 500
-    }
+    const shippingFee = deliveryOption === 'same_day' ? 500 : 0
     const serverTotal = serverSubtotal + shippingFee
 
     const order = await createOrder({
