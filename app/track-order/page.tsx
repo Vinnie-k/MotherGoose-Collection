@@ -60,18 +60,18 @@ export default function TrackOrderPage() {
 
   return (
     <div style={{ paddingTop: 80, minHeight: '100vh' }}>
-      <div style={{ maxWidth: 720, margin: '0 auto', padding: '48px 24px' }}>
+      <div style={{ maxWidth: 720, margin: '0 auto', padding: '32px 16px' }}>
         {/* Header */}
         <div style={{ marginBottom: 40 }}>
           <p style={{ color: '#C9A84C', fontSize: '0.65rem', letterSpacing: '0.4em', textTransform: 'uppercase', marginBottom: 8 }}>Shipping</p>
-          <h1 className="font-display" style={{ color: '#F5F2EC', fontSize: '3rem' }}>Track Your Order</h1>
+          <h1 className="font-display" style={{ color: '#F5F2EC', fontSize: 'clamp(1.8rem, 6vw, 3rem)' }}>Track Your Order</h1>
           <div style={{ width: 48, height: 1, background: '#C9A84C', marginTop: 12 }} />
         </div>
 
         {/* Search form */}
         <form onSubmit={handleTrack} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)', padding: 28, marginBottom: 28 }}>
           <h2 className="font-display" style={{ color: '#F5F2EC', fontSize: '1.25rem', marginBottom: 20 }}>Enter Order Details</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16, marginBottom: 16 }}>
             <div>
               <label style={{ display: 'block', color: 'rgba(245,242,236,0.5)', fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8 }}>
                 Order Number *

@@ -88,6 +88,8 @@ function generateOrderNumber(): string {
 }
 
 function rowToOrder(row: Record<string, unknown>): Order {
+  const customer = row.customer as Order['customer']
+  const address  = row.address  as Order['address']
   return {
     id:            row.id             as string,
     orderNumber:   row.order_number   as string,
@@ -98,18 +100,9 @@ function rowToOrder(row: Record<string, unknown>): Order {
     subtotal:      Number(row.subtotal),
     shipping:      Number(row.shipping),
     total:         Number(row.total),
-    customer: {
-      firstName: row.customer_first_name as string,
-      lastName:  row.customer_last_name  as string,
-      email:     row.customer_email      as string,
-      phone:     row.customer_phone      as string,
-    },
-    address: {
-      street: row.address_street as string,
-      city:   row.address_city   as string,
-      zip:    row.address_zip    as string,
-    },
-    deliveryOption: (row.delivery_option as Order['deliveryOption']) ?? 'same_day',
+    customer,
+    address,
+    deliveryOption: (row.delivery_option as Order['deliveryOption']) ?? null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   }
@@ -117,25 +110,20 @@ function rowToOrder(row: Record<string, unknown>): Order {
 
 function orderToRow(order: Order) {
   return {
-    id:                  order.id,
-    order_number:        order.orderNumber,
-    status:              order.status,
-    payment_method:      order.paymentMethod,
-    payment_status:      order.paymentStatus,
-    items:               order.items,
-    subtotal:            order.subtotal,
-    shipping:            order.shipping,
-    total:               order.total,
-    customer_first_name: order.customer.firstName,
-    customer_last_name:  order.customer.lastName,
-    customer_email:      order.customer.email,
-    customer_phone:      order.customer.phone,
-    address_street:      order.address.street,
-    address_city:        order.address.city,
-    address_zip:         order.address.zip,
-    delivery_option:     order.deliveryOption,
-    created_at:          order.createdAt,
-    updated_at:          order.updatedAt,
+    id:             order.id,
+    order_number:   order.orderNumber,
+    status:         order.status,
+    payment_method: order.paymentMethod,
+    payment_status: order.paymentStatus,
+    items:          order.items,
+    subtotal:       order.subtotal,
+    shipping:       order.shipping,
+    total:          order.total,
+    customer:       order.customer,
+    address:        order.address,
+    delivery_option: order.deliveryOption,
+    created_at:     order.createdAt,
+    updated_at:     order.updatedAt,
   }
 }
 
@@ -320,12 +308,14 @@ export async function getOrderByNumber(orderNumber: string): Promise<Order | nul
       .eq('order_number', orderNumber)
       .single()
     if (!error && data) return rowToOrder(data as Record<string, unknown>)
-    if (error?.code === 'PGRST116') {
+    // Fall back to file store for any error (not found, network, schema issues, etc.)
+    if (error) {
+      if (error.code !== 'PGRST116') {
+        console.error('[OrderStore] getOrderByNumber error:', error.message, error.code)
+      }
       const fileOrders = await readFile()
       return fileOrders.find(o => o.orderNumber === orderNumber) ?? null
     }
-    if (error) console.error('[OrderStore] getOrderByNumber error:', error.message, error.code)
-    return null
   }
   const orders = await readFile()
   return orders.find(o => o.orderNumber === orderNumber) ?? null
