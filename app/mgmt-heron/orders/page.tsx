@@ -360,7 +360,7 @@ export default function AdminOrdersPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <AdminSidebar />
-      <div style={{ flex: 1, padding: 32, overflowX: 'auto' }}>
+      <div className="admin-main-content" style={{ flex: 1, padding: 32, overflowX: 'auto' }}>
 
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: 32 }}>

@@ -143,3 +143,12 @@ body {
     gap: 48px !important;
   }
 }
+
+/* Admin pages — full width on mobile since sidebar is off-canvas */
+@media (max-width: 767px) {
+  .admin-main-content {
+    padding-top: 56px !important;
+    min-width: 0 !important;
+    width: 100% !important;
+  }
+}

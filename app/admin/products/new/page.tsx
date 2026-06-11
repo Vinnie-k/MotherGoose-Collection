@@ -7,7 +7,7 @@ export default function AddProductPage() {
   return (
     <div style={{ display: 'flex', minHeight: '100vh' }}>
       <AdminSidebar />
-      <div style={{ flex: 1, padding: 32, overflowY: 'auto', maxWidth: 800 }}>
+      <div className="admin-main-content" style={{ flex: 1, padding: 32, overflowY: 'auto', maxWidth: 800 }}>
         <div style={{ marginBottom: 32 }}>
           <p style={{ color: '#C9A84C', fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 4 }}>Inventory</p>
           <h1 className="font-display" style={{ color: '#F5F2EC', fontSize: '2.5rem' }}>Add New Product</h1>
