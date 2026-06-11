@@ -32,7 +32,7 @@ export default function Footer() {
                 style={{ color: 'rgba(245,242,236,0.35)', fontSize: '0.75rem', textDecoration: 'none' }}>
                 mothergoosecollection254@gmail.com
               </a>
-              <a href="https://www.instagram.com/mothergoosecollection254" target="_blank" rel="noopener noreferrer"
+              <a href="https://www.instagram.com/mothergoosecollection254?igsh=MTZocmJ3eGY1dmMxZA%3D%3D&utm_source=qr" target="_blank" rel="noopener noreferrer"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 8, color: 'rgba(245,242,236,0.35)', fontSize: '0.8rem', textDecoration: 'none', marginTop: 2 }}>
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="2" width="20" height="20" rx="5" ry="5"/><path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"/><line x1="17.5" y1="6.5" x2="17.51" y2="6.5"/></svg>
                 Instagram
