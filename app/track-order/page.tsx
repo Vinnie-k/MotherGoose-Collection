@@ -99,7 +99,7 @@ export default function TrackOrderPage() {
             </div>
           </div>
           <p style={{ color: 'rgba(245,242,236,0.25)', fontSize: '0.75rem', marginBottom: 16 }}>
-            Your order number starts with MG- and was displayed on the confirmation screen and sent to your email.
+            Your order number starts with MG- and was displayed on the confirmation screen and sent to your email. If you ordered via WhatsApp, your order number was shared in the chat — use the email address you provided at checkout.
           </p>
           <button type="submit" disabled={loading} className="btn-primary"
             style={{ display: 'flex', alignItems: 'center', gap: 8, opacity: loading ? 0.6 : 1 }}>

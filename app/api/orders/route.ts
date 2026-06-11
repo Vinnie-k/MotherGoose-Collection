@@ -2,11 +2,26 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createOrder, loadOrders, getOrderByNumber } from '@/lib/order-store'
 import { loadProducts } from '@/lib/product-store'
 import { isAdminAuthenticated } from '@/lib/admin-auth'
+import { checkRateLimit, getClientIp } from '@/lib/rate-limit'
 
 export const dynamic = 'force-dynamic'
 
+// 20 order attempts per IP per hour
+const ORDER_LIMIT = { limit: 20, windowMs: 60 * 60 * 1000 }
+// 60 tracking lookups per IP per hour
+const TRACK_LIMIT = { limit: 60, windowMs: 60 * 60 * 1000 }
+
 // POST — customer places an order
 export async function POST(request: NextRequest) {
+  const ip = getClientIp(request)
+  const rl = checkRateLimit(`orders-post:${ip}`, ORDER_LIMIT)
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'Too many requests. Please wait before placing another order.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) } }
+    )
+  }
+
   try {
     const body = await request.json()
     const required = ['items', 'customer', 'address', 'total', 'paymentMethod']
@@ -33,7 +48,11 @@ export async function POST(request: NextRequest) {
     const order = await createOrder({
       items: body.items.map((item: { productId: string; name: string; quantity: number; image: string }) => {
         const product = products.find((p) => p.id === item.productId)!
-        return { ...item, price: product.price } // always use server price
+        return {
+          ...item,
+          price: product.price, // always use server price
+          admin_source_tag: product.admin_source_tag ?? null,
+        }
       }),
       customer: body.customer,
       address: body.address,
@@ -58,6 +77,15 @@ export async function GET(request: NextRequest) {
 
   // Public track-order lookup — both order number AND email are required
   if (orderNumber) {
+    const ip = getClientIp(request)
+    const rl = checkRateLimit(`orders-track:${ip}`, TRACK_LIMIT)
+    if (!rl.allowed) {
+      return NextResponse.json(
+        { error: 'Too many tracking requests. Please wait before trying again.' },
+        { status: 429 }
+      )
+    }
+
     if (!email) return NextResponse.json({ error: 'Email is required to track an order' }, { status: 400 })
     const order = await getOrderByNumber(orderNumber.toUpperCase())
     if (!order) return NextResponse.json({ error: 'Order not found' }, { status: 404 })

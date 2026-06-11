@@ -23,13 +23,16 @@ const SUBCATEGORIES: Record<string, string[]> = {
 
 // Size options per category
 const CATEGORY_SIZES: Record<string, string[]> = {
-  watches: ['One Size'],
-  suits: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '36', '38', '40', '42', '44', '46', '48'],
-  clothing: ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
-  shoes: ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47'],
+  watches:     ['One Size'],
+  suits:       ['46', '48', '50', '52', '54', '56', '58'],
+  clothing:    ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'],
+  shoes:       ['36', '37', '38', '39', '40', '41', '42', '43', '44', '45', '46', '47'],
   accessories: ['One Size', 'S/M', 'M/L', 'L/XL'],
-  bags: ['One Size', 'Small', 'Medium', 'Large'],
+  bags:        ['One Size', 'Small', 'Medium', 'Large'],
 }
+
+// Trouser subcategory overrides the default clothing sizes
+const TROUSER_SIZES = ['32', '34', '36', '38', '40', '42', '44', '46', '48']
 
 // Whether a category uses sizes at all
 const CATEGORY_USES_SIZES: Record<string, boolean> = {
@@ -85,7 +88,16 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
   const set = (key: string, value: unknown) => setForm((p) => ({ ...p, [key]: value }))
 
   const usesSizes = CATEGORY_USES_SIZES[form.category] ?? false
-  const availableSizes = CATEGORY_SIZES[form.category] ?? []
+  const isTrousers = form.category === 'clothing' && form.subcategory === 'trousers'
+  const isSuits    = form.category === 'suits'
+  const availableSizes = isTrousers
+    ? TROUSER_SIZES
+    : (CATEGORY_SIZES[form.category] ?? [])
+  const sizeHint = isTrousers
+    ? 'Trouser sizes are waist measurements in inches (32–48)'
+    : isSuits
+    ? 'Suit sizes are chest measurements (46–58)'
+    : null
 
   const toggleSize = (size: string) => {
     setSizes(prev => {
@@ -143,7 +155,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
     }
 
     try {
-      const res = await fetch('/api/admin/products', {
+      const res = await fetch('/api/mgmt-heron/products', {
         method: mode === 'create' ? 'POST' : 'PUT',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
@@ -156,7 +168,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
       if (!res.ok) {
         if (res.status === 401) {
           setError('Session expired. Redirecting to login…')
-          setTimeout(() => { window.location.href = '/admin/login' }, 1500)
+          setTimeout(() => { window.location.href = '/mgmt-heron/login' }, 1500)
         } else {
           setError((data.error as string) || `Save failed (status ${res.status})`)
         }
@@ -165,7 +177,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
       }
 
       setSuccess(true)
-      setTimeout(() => router.push('/admin/products'), 1200)
+      setTimeout(() => router.push('/mgmt-heron/products'), 1200)
     } catch {
       setError('Network error. Check that the dev server is running.')
       setSaving(false)
@@ -236,7 +248,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
         {subcats.length > 0 && (
           <div style={{ marginBottom: 16 }}>
             <label style={s.label}>Subcategory</label>
-            <select value={form.subcategory} onChange={(e) => set('subcategory', e.target.value)} style={{ ...s.input, cursor: 'pointer' }}>
+            <select value={form.subcategory} onChange={(e) => { set('subcategory', e.target.value); setSizes([]) }} style={{ ...s.input, cursor: 'pointer' }}>
               <option value="" style={{ background: '#0A0A0F' }}>— None —</option>
               {subcats.map((sub) => <option key={sub} value={sub} style={{ background: '#0A0A0F' }}>{sub}</option>)}
             </select>
@@ -293,9 +305,14 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
           <p style={s.section}>
             Sizes & Stock per Size <span style={{ color: '#f87171' }}>*</span>
           </p>
-          <p style={{ color: 'rgba(245,242,236,0.3)', fontSize: '0.75rem', marginBottom: 16 }}>
+          <p style={{ color: 'rgba(245,242,236,0.3)', fontSize: '0.75rem', marginBottom: sizeHint ? 8 : 16 }}>
             Click a size to add it. Set the stock quantity for each size. Sizes with 0 stock will show as out of stock on the store.
           </p>
+          {sizeHint && (
+            <p style={{ color: '#C9A84C', fontSize: '0.75rem', marginBottom: 16, background: 'rgba(201,168,76,0.07)', border: '1px solid rgba(201,168,76,0.2)', padding: '8px 12px' }}>
+              ℹ {sizeHint}
+            </p>
+          )}
 
           {/* Size selector buttons */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 20 }}>
@@ -488,7 +505,7 @@ export default function ProductForm({ initialData, mode }: ProductFormProps) {
 
       {/* ── Actions ── */}
       <div style={{ display: 'flex', gap: 12, paddingTop: 16, borderTop: '1px solid rgba(255,255,255,0.05)' }}>
-        <button type="button" onClick={() => router.push('/admin/products')}
+        <button type="button" onClick={() => router.push('/mgmt-heron/products')}
           className="btn-outline" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <ArrowLeft size={14} /> Cancel
         </button>

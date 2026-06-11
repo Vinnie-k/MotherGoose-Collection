@@ -154,7 +154,7 @@ function printReceipt(order: Order) {
     <div style="text-align:center;border-top:1px solid #ddd;padding-top:20px;color:#666;font-size:12px;line-height:1.8;">
       <p style="font-weight:700;color:#000;">Thank you for your purchase!</p>
       <p>Mothergoose Collection | Nairobi, Kenya</p>
-      <p>mothergoosecollection1@gmail.com | +254 759 490 008</p>
+      <p>mothergoosecollection254@gmail.com | +254 759 490 008</p>
     </div>
 
   </div>
@@ -209,6 +209,7 @@ export default function AdminOrdersPage() {
   const [updatingId, setUpdatingId] = useState<string | null>(null)
   const [filterStatus, setFilterStatus] = useState('')
   const [filterMethod, setFilterMethod] = useState('')
+  const [filterSupplier, setFilterSupplier] = useState('')
   const [search, setSearch] = useState('')
 
   const load = useCallback(async () => {
@@ -216,7 +217,7 @@ export default function AdminOrdersPage() {
     setError('')
     try {
       const res = await fetch('/api/orders', { credentials: 'include' })
-      if (res.status === 401) { window.location.href = '/admin/login'; return }
+      if (res.status === 401) { window.location.href = '/mgmt-heron/login'; return }
       const data = await res.json()
       setOrders(data.orders || [])
     } catch {
@@ -242,7 +243,7 @@ export default function AdminOrdersPage() {
         const updatedOrder: Order = data.order
         setOrders((prev) => prev.map((o) => o.id === id ? updatedOrder : o))
 
-        if (['dispatched', 'delivered', 'cancelled'].includes(status) && updatedOrder.customer?.email) {
+        if (['confirmed', 'dispatched', 'delivered'].includes(status) && updatedOrder.customer?.email) {
           fetch('/api/send-status-email', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -270,27 +271,59 @@ export default function AdminOrdersPage() {
     return num
   }
 
+  const STATUS_MESSAGES: Record<string, string> = {
+    confirmed:  'We are pleased to confirm that your order has been received and is currently being prepared for dispatch. You will receive a further update once your order has been dispatched.',
+    dispatched: 'We are pleased to inform you that your order has been dispatched and is currently en route to your delivery address. Our courier partner will be in touch to arrange delivery.',
+    delivered:  'We trust that your order has been delivered to your satisfaction. Thank you for choosing Mothergoose Collection. Should you have any concerns, please do not hesitate to contact us.',
+    cancelled:  'We wish to inform you that your order has been cancelled. If you did not authorise this cancellation or require further clarification, please reply to this message and we will attend to your query promptly.',
+    pending:    'Thank you for your order. We have received your request and it is currently pending review. We will notify you once it has been confirmed.',
+  }
+
   const openWhatsApp = (order: Order) => {
     const itemLines = order.items.map(i => {
-      let details = `${i.name}${i.color ? ` (Color: ${i.color})` : ''}${i.size ? ` (Size: ${i.size})` : ''}`
-      return `• ${details} x${i.quantity} — ${formatPrice(i.price * i.quantity)}`
+      const details = [
+        i.name,
+        i.color ? `Colour: ${i.color}` : '',
+        i.size  ? `Size: ${i.size}`   : '',
+        `Qty: ${i.quantity}`,
+        formatPrice(i.price * i.quantity),
+      ].filter(Boolean).join('  |  ')
+      return `  - ${details}`
     }).join('\n')
+
+    const statusNote = STATUS_MESSAGES[order.status] || ''
+    const statusLabel = order.status
+      ? order.status.charAt(0).toUpperCase() + order.status.slice(1)
+      : ''
+
     const msg = [
-      `📦 *Order Update — ${order.orderNumber}*`,
+      `*Mothergoose Collection*`,
+      `Order Reference: ${order.orderNumber}`,
       ``,
-      `Hi ${order.customer.firstName}, your Mothergoose Collection order:`,
+      `Dear ${order.customer.firstName},`,
+      ``,
+      statusNote,
+      ``,
+      `*Order Summary*`,
       itemLines,
       ``,
-      `Total: ${formatPrice(order.total)}`,
-      `Status: ${order.status.toUpperCase()}`,
+      `*Total:* ${formatPrice(order.total)}`,
+      `*Order Status:* ${statusLabel}`,
+      ``,
+      `Should you have any questions, please reply to this message.`,
+      ``,
+      `Mothergoose Collection`,
+      `Nairobi, Kenya`,
+      `+254 759 490 008`,
     ].join('\n')
+
     const customerNumber = formatWhatsAppNumber(order.customer.phone)
     window.open(`https://wa.me/${customerNumber}?text=${encodeURIComponent(msg)}`, '_blank')
   }
-
   const filtered = orders
     .filter(o => !filterStatus || o.status === filterStatus)
     .filter(o => !filterMethod || o.paymentMethod === filterMethod)
+    .filter(o => !filterSupplier || o.items.some(i => i.admin_source_tag === filterSupplier))
     .filter(o => {
       if (!search) return true
       const q = search.toLowerCase()
@@ -311,6 +344,10 @@ export default function AdminOrdersPage() {
       (o.paymentMethod === 'cod'      && o.status === 'delivered')
     )
     .reduce((s, o) => s + o.total, 0)
+
+  const allSuppliers = Array.from(
+    new Set(orders.flatMap(o => o.items.map(i => i.admin_source_tag).filter(Boolean)))
+  ) as string[]
 
   const stat = (label: string, value: string | number, color: string, sub?: string) => (
     <div key={label} style={{ border: `1px solid ${color}22`, background: `${color}0a`, padding: 18 }}>
@@ -378,7 +415,7 @@ export default function AdminOrdersPage() {
           <div style={{ display: 'flex', gap: 6 }}>
             {[
               { val: '', label: 'All Methods' },
-              { val: 'whatsapp', label: '📱 WhatsApp' },
+              { val: 'whatsapp', label: 'WhatsApp' },
               { val: 'cod', label: '💵 COD' },
             ].map(({ val, label }) => (
               <button key={val || 'all-m'} onClick={() => setFilterMethod(val)}
@@ -392,6 +429,17 @@ export default function AdminOrdersPage() {
               </button>
             ))}
           </div>
+
+          {/* Supplier filter */}
+          {allSuppliers.length > 0 && (
+            <select value={filterSupplier} onChange={(e) => setFilterSupplier(e.target.value)}
+              style={{ background: 'rgba(255,255,255,0.04)', border: `1px solid ${filterSupplier ? 'rgba(201,168,76,0.5)' : 'rgba(255,255,255,0.1)'}`, color: filterSupplier ? '#C9A84C' : 'rgba(245,242,236,0.4)', padding: '6px 12px', fontSize: '0.7rem', cursor: 'pointer', outline: 'none' }}>
+              <option value="" style={{ background: '#0d0d1a', color: '#F5F2EC' }}>All Suppliers</option>
+              {allSuppliers.map(s => (
+                <option key={s} value={s} style={{ background: '#0d0d1a', color: '#F5F2EC' }}>{s}</option>
+              ))}
+            </select>
+          )}
         </div>
 
         {/* Status filter pills */}
@@ -524,6 +572,11 @@ export default function AdminOrdersPage() {
                                 <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2 }}>
                                   {item.color && <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.65rem', background: 'rgba(255,255,255,0.05)', padding: '2px 6px' }}>Color: {item.color}</p>}
                                   {item.size && <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.65rem', background: 'rgba(255,255,255,0.05)', padding: '2px 6px' }}>Size: {item.size}</p>}
+                                  {item.admin_source_tag && (
+                                    <p style={{ color: '#C9A84C', fontSize: '0.65rem', background: 'rgba(201,168,76,0.08)', border: '1px solid rgba(201,168,76,0.2)', padding: '2px 6px' }}>
+                                      ⬡ {item.admin_source_tag}
+                                    </p>
+                                  )}
                                 </div>
                                 <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.7rem', marginTop: 2 }}>Qty: {item.quantity} × {formatPrice(item.price)}</p>
                               </div>
@@ -551,6 +604,21 @@ export default function AdminOrdersPage() {
 
                       {/* Right column: delivery + actions */}
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+                        {/* Supplier summary for this order */}
+                        {(() => {
+                          const orderSuppliers = Array.from(new Set(order.items.map(i => i.admin_source_tag).filter(Boolean))) as string[]
+                          return orderSuppliers.length > 0 ? (
+                            <div style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.2)', padding: '12px 16px' }}>
+                              <p style={{ color: '#C9A84C', fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 8, fontWeight: 600 }}>Supplier(s)</p>
+                              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                                {orderSuppliers.map(s => (
+                                  <span key={s} style={{ background: 'rgba(201,168,76,0.1)', border: '1px solid rgba(201,168,76,0.25)', color: '#C9A84C', fontSize: '0.75rem', padding: '4px 10px', fontWeight: 600 }}>{s}</span>
+                                ))}
+                              </div>
+                            </div>
+                          ) : null
+                        })()}
+
                         <div style={{ background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.15)', padding: '12px 16px' }}>
                           <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.6rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 6 }}>Delivery Method</p>
                           <p style={{ color: order.deliveryOption === 'same_day' ? DELIVERY_COLORS.same_day : 'rgba(245,242,236,0.5)', fontSize: '0.875rem', fontWeight: 700 }}>

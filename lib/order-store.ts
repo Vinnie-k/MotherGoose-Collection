@@ -11,6 +11,7 @@ export interface OrderItem {
   size?: string
   color?: string
   colorImage?: string
+  admin_source_tag?: string | null
 }
 
 export interface Order {

@@ -5,11 +5,11 @@ import { usePathname, useRouter } from 'next/navigation'
 import { LayoutDashboard, Package, Plus, LogOut, ExternalLink, ShoppingCart, BarChart3 } from 'lucide-react'
 
 const NAV = [
-  { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
-  { href: '/admin/products', label: 'All Products', icon: Package, exact: false },
-  { href: '/admin/products/new', label: 'Add Product', icon: Plus, exact: true },
-  { href: '/admin/orders', label: 'Orders', icon: ShoppingCart, exact: false },
-  { href: '/admin/reports', label: 'Reports', icon: BarChart3, exact: false },
+  { href: '/mgmt-heron', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { href: '/mgmt-heron/products', label: 'All Products', icon: Package, exact: false },
+  { href: '/mgmt-heron/products/new', label: 'Add Product', icon: Plus, exact: true },
+  { href: '/mgmt-heron/orders', label: 'Orders', icon: ShoppingCart, exact: false },
+  { href: '/mgmt-heron/reports', label: 'Reports', icon: BarChart3, exact: false },
 ]
 
 const s = {
@@ -33,8 +33,8 @@ export default function AdminSidebar() {
   const router = useRouter()
 
   const handleLogout = async () => {
-    await fetch('/api/admin/login', { method: 'DELETE', credentials: 'include' })
-    window.location.href = '/admin/login'
+    await fetch('/api/mgmt-heron/login', { method: 'DELETE', credentials: 'include' })
+    window.location.href = '/mgmt-heron/login'
   }
 
   return (

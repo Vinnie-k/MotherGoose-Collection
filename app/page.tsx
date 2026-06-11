@@ -52,14 +52,11 @@ export default function HomePage() {
               Limits
             </h1>
             <p style={{ color: 'rgba(245,242,236,0.6)', fontSize: '1.1rem', lineHeight: 1.7, marginBottom: 40, maxWidth: 420 }} className="stagger-3">
-              Curated luxury fashion for men who understand that true style is timeless. From precision timepieces to hand-tailored suits.
+              Curated luxury fashion for those who understand that true style is timeless. From precision timepieces to hand-tailored suits.
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16 }} className="stagger-4">
               <Link href="/products" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 Shop Collection <ArrowRight size={16} />
-              </Link>
-              <Link href="/category/watches" className="btn-outline">
-                Explore Watches
               </Link>
             </div>
           </div>

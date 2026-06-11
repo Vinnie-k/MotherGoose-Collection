@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useParams } from 'next/navigation'
@@ -49,6 +49,26 @@ export default function ProductDetailPage() {
   const [quantity, setQuantity] = useState(1)
   const [added, setAdded] = useState(false)
   const [activeTab, setActiveTab] = useState<'details'|'shipping'>('details')
+
+  // Zoom state
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [zoomPos, setZoomPos]           = useState({ x: 50, y: 50 })
+  const [isZooming, setIsZooming]       = useState(false)
+  const imageContainerRef               = useRef<HTMLDivElement>(null)
+
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect()
+    const x = ((e.clientX - rect.left) / rect.width)  * 100
+    const y = ((e.clientY - rect.top)  / rect.height) * 100
+    setZoomPos({ x, y })
+  }, [])
+
+  // Close lightbox on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setLightboxOpen(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
 
   // When the user picks a color, show that color's images first
   // and reset the carousel to the first image so the chosen color is visible immediately.
@@ -163,8 +183,14 @@ export default function ProductDetailPage() {
           {/* Images */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 480, width: '100%' }}>
 
-            {/* Main image with slider */}
-            <div style={{ position: 'relative', aspectRatio: '1', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', userSelect: 'none' }}
+            {/* Main image with slider + zoom */}
+            <div
+              ref={imageContainerRef}
+              style={{ position: 'relative', aspectRatio: '1', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', userSelect: 'none', cursor: isZooming ? 'crosshair' : 'zoom-in' }}
+              onMouseMove={handleMouseMove}
+              onMouseEnter={() => setIsZooming(true)}
+              onMouseLeave={() => setIsZooming(false)}
+              onClick={() => setLightboxOpen(true)}
               onTouchStart={e => {
                 const touch = e.touches[0]
                 ;(e.currentTarget as HTMLElement).dataset.touchX = String(touch.clientX)
@@ -176,8 +202,39 @@ export default function ProductDetailPage() {
                 if (Math.abs(diff) > 40) {
                   if (diff > 0) setSelectedImage(i => Math.min(i + 1, displayImages.length - 1))
                   else setSelectedImage(i => Math.max(i - 1, 0))
+                } else {
+                  setLightboxOpen(true)
                 }
               }}>
+
+              {/* Zoom lens overlay — desktop only */}
+              {isZooming && (
+                <div style={{
+                  position: 'absolute',
+                  inset: 0,
+                  zIndex: 10,
+                  pointerEvents: 'none',
+                  backgroundImage: `url(${displayImages[selectedImage]})`,
+                  backgroundSize: '250%',
+                  backgroundPosition: `${zoomPos.x}% ${zoomPos.y}%`,
+                  backgroundRepeat: 'no-repeat',
+                  opacity: 1,
+                }} />
+              )}
+
+              {/* Zoom hint badge */}
+              {!isZooming && (
+                <div style={{
+                  position: 'absolute', bottom: 14, right: 14, zIndex: 3,
+                  background: 'rgba(0,0,0,0.55)', backdropFilter: 'blur(4px)',
+                  border: '1px solid rgba(255,255,255,0.12)',
+                  padding: '4px 10px', borderRadius: 20,
+                  display: 'flex', alignItems: 'center', gap: 5, pointerEvents: 'none',
+                }}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="rgba(255,255,255,0.6)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/><line x1="11" y1="8" x2="11" y2="14"/><line x1="8" y1="11" x2="14" y2="11"/></svg>
+                  <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.6rem', letterSpacing: '0.05em' }}>Hover to zoom · Click to expand</span>
+                </div>
+              )}
 
               {/* Sliding strip */}
               <div style={{
@@ -445,6 +502,116 @@ export default function ProductDetailPage() {
           </div>
         )}
       </div>
+      {/* Lightbox */}
+      {lightboxOpen && displayImages.length > 0 && (
+        <div
+          onClick={() => setLightboxOpen(false)}
+          style={{
+            position: 'fixed', inset: 0, zIndex: 1000,
+            background: 'rgba(0,0,0,0.95)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            backdropFilter: 'blur(8px)',
+          }}>
+          {/* Close button */}
+          <button
+            onClick={() => setLightboxOpen(false)}
+            style={{
+              position: 'absolute', top: 20, right: 20,
+              width: 44, height: 44, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)',
+              color: 'rgba(255,255,255,0.8)', cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: '1.2rem', zIndex: 1001,
+            }}>
+            ✕
+          </button>
+
+          {/* Counter */}
+          <div style={{
+            position: 'absolute', top: 24, left: '50%', transform: 'translateX(-50%)',
+            background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+            padding: '4px 14px', borderRadius: 20, color: 'rgba(255,255,255,0.7)',
+            fontSize: '0.7rem', letterSpacing: '0.1em', zIndex: 1001,
+          }}>
+            {selectedImage + 1} / {displayImages.length}
+          </div>
+
+          {/* Image */}
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              position: 'relative',
+              width: 'min(90vw, 900px)',
+              height: 'min(85vh, 900px)',
+            }}>
+            <Image
+              src={displayImages[selectedImage]}
+              alt={`${product.name} — photo ${selectedImage + 1}`}
+              fill
+              sizes="90vw"
+              style={{ objectFit: 'contain' }}
+              priority
+            />
+          </div>
+
+          {/* Prev / Next */}
+          {displayImages.length > 1 && (
+            <>
+              <button
+                onClick={e => { e.stopPropagation(); setSelectedImage(i => Math.max(i - 1, 0)) }}
+                disabled={selectedImage === 0}
+                style={{
+                  position: 'absolute', left: 20, top: '50%', transform: 'translateY(-50%)',
+                  width: 48, height: 48, borderRadius: '50%', zIndex: 1001,
+                  background: selectedImage === 0 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  color: selectedImage === 0 ? 'rgba(255,255,255,0.2)' : 'white',
+                  cursor: selectedImage === 0 ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"/></svg>
+              </button>
+              <button
+                onClick={e => { e.stopPropagation(); setSelectedImage(i => Math.min(i + 1, displayImages.length - 1)) }}
+                disabled={selectedImage === displayImages.length - 1}
+                style={{
+                  position: 'absolute', right: 20, top: '50%', transform: 'translateY(-50%)',
+                  width: 48, height: 48, borderRadius: '50%', zIndex: 1001,
+                  background: selectedImage === displayImages.length - 1 ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.15)',
+                  border: '1px solid rgba(255,255,255,0.2)',
+                  color: selectedImage === displayImages.length - 1 ? 'rgba(255,255,255,0.2)' : 'white',
+                  cursor: selectedImage === displayImages.length - 1 ? 'not-allowed' : 'pointer',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+              </button>
+            </>
+          )}
+
+          {/* Thumbnail strip */}
+          {displayImages.length > 1 && (
+            <div style={{
+              position: 'absolute', bottom: 20, left: '50%', transform: 'translateX(-50%)',
+              display: 'flex', gap: 8, zIndex: 1001,
+            }}
+              onClick={e => e.stopPropagation()}>
+              {displayImages.map((img, i) => (
+                <button key={i} onClick={() => setSelectedImage(i)}
+                  style={{
+                    width: 52, height: 52, flexShrink: 0, overflow: 'hidden',
+                    position: 'relative', padding: 0,
+                    border: `2px solid ${selectedImage === i ? '#C9A84C' : 'rgba(255,255,255,0.15)'}`,
+                    background: 'rgba(255,255,255,0.05)', cursor: 'pointer',
+                    opacity: selectedImage === i ? 1 : 0.5, transition: 'all 0.2s',
+                  }}>
+                  <Image src={img} alt={`Thumb ${i+1}`} fill sizes="60px" style={{ objectFit: 'cover', pointerEvents: 'none' }} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       <style>{`
         @media (min-width: 768px) {
           .product-grid { grid-template-columns: 480px 1fr !important; align-items: start !important; }

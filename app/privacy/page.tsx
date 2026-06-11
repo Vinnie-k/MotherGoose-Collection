@@ -40,7 +40,7 @@ export default function PrivacyPage() {
     },
     {
       title: '9. Contact',
-      body: `For any privacy-related questions or to exercise your rights, contact our Data Protection Officer at privacy@mothergoosecollection.com or write to: Mothergoose Collection, Westlands, Nairobi, Kenya.`,
+      body: `For any privacy-related questions or to exercise your rights, contact our Data Protection Officer at privacy@mothergoosecollection.com or write to: Mothergoose Collection, Nairobi, Kenya.`,
     },
   ]
 

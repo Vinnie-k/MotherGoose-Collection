@@ -72,8 +72,8 @@ export default function TermsPage() {
           <div className="border-t border-white/5 pt-8">
             <p className="text-ivory/30 text-sm">
               Questions about our Terms of Service? Contact us at{' '}
-              <a href="mailto:legal@mothergoosecollection.com" className="text-gold hover:text-gold-light transition-colors">
-                legal@mothergoosecollection.com
+              <a href="mailto:mothergoosecollection254@gmail.com" className="text-gold hover:text-gold-light transition-colors">
+                mothergoosecollection254@gmail.com
               </a>
             </p>
           </div>

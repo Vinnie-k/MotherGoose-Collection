@@ -5,22 +5,15 @@ const DELIVERY_OPTIONS = [
   {
     id: 'standard',
     name: 'Standard Delivery',
-    time: '3–5 Business Days',
+    time: '2–3 Business Days',
     price: 'Free on orders over Ksh 5,000. Ksh 500 otherwise.',
-    desc: 'Tracked delivery via our courier partners. You will receive a tracking update by email once dispatched.',
-  },
-  {
-    id: 'express',
-    name: 'Express Delivery',
-    time: '1–2 Business Days',
-    price: 'Ksh 1,500 flat rate',
-    desc: 'Priority handling and expedited transit. Ideal for urgent gifts or time-sensitive occasions.',
+    desc: 'Tracked delivery via our courier partners. You will receive an email update once your order is dispatched.',
   },
   {
     id: 'same_day',
     name: 'Same-Day Delivery',
     time: 'Same Day (Nairobi only)',
-    price: 'Ksh 2,500 flat rate',
+    price: 'Ksh 500 flat rate',
     desc: 'Order before 12 PM for same-day delivery within Nairobi. Available Monday to Saturday.',
   },
 ]

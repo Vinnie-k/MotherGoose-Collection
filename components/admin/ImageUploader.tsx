@@ -34,7 +34,7 @@ export default function ImageUploader({ images, onChange, maxImages = 5 }: Image
     try {
       const formData = new FormData()
       formData.append('file', file)
-      const res = await fetch('/api/admin/upload', {
+      const res = await fetch('/api/mgmt-heron/upload', {
         method: 'POST',
         credentials: 'include',
         body: formData,

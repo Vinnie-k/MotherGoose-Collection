@@ -1,22 +1,6 @@
-'use client'
-
-import { useState } from 'react'
-import { Mail, Phone, MapPin, Clock, Send, CheckCircle } from 'lucide-react'
+import { Mail, Phone, MapPin, Clock } from 'lucide-react'
 
 export default function ContactPage() {
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
-  const [sent, setSent] = useState(false)
-  const [loading, setLoading] = useState(false)
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setTimeout(() => {
-      setLoading(false)
-      setSent(true)
-    }, 1200)
-  }
-
   return (
     <div className="pt-24 min-h-screen">
       {/* Hero bar */}
@@ -25,23 +9,24 @@ export default function ContactPage() {
           <p className="text-gold text-xs tracking-[0.4em] uppercase mb-3">Get in Touch</p>
           <h1 className="font-display text-5xl md:text-6xl text-ivory">Contact Us</h1>
           <p className="text-ivory/40 mt-4 max-w-lg leading-relaxed">
-            Our client advisors are available to assist with sizing, styling advice, order queries and anything else.
+            Our team is available to assist with sizing, styling advice, order queries and anything else. Reach out via WhatsApp or email — we&apos;ll get back to you promptly.
           </p>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-6 pb-24">
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-16">
-          {/* Info */}
-          <div className="lg:col-span-2 space-y-10">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
+
+          {/* Contact details */}
+          <div className="space-y-10">
             <div>
               <h2 className="font-display text-2xl text-ivory mb-6">Our Details</h2>
               <div className="space-y-5">
                 {[
-                  { icon: Mail, label: 'Email', value: 'mothergoosecollection1@gmail.com', href: 'mailto:mothergoosecollection1@gmail.com' },
-                  { icon: Phone, label: 'Phone', value: '+254 759 490 008', href: 'tel:+254759490008' },
-                  { icon: MapPin, label: 'Address', value: 'Westlands, Nairobi, Kenya', href: '#' },
-                  { icon: Clock, label: 'Hours', value: 'Mon–Sat: 9am – 6pm EAT', href: null },
+                  { icon: Mail,   label: 'Email',   value: 'mothergoosecollection254@gmail.com', href: 'mailto:mothergoosecollection254@gmail.com' },
+                  { icon: Phone,  label: 'Phone',   value: '+254 759 490 008',                   href: 'tel:+254759490008' },
+                  { icon: MapPin, label: 'Address', value: 'Nairobi, Kenya',          href: '#' },
+                  { icon: Clock,  label: 'Hours',   value: 'Mon–Sat: 9am – 6pm EAT',            href: null },
                 ].map(({ icon: Icon, label, value, href }) => (
                   <div key={label} className="flex items-start gap-4">
                     <div className="w-10 h-10 border border-gold/20 flex items-center justify-center flex-shrink-0 mt-0.5">
@@ -62,105 +47,49 @@ export default function ContactPage() {
               </div>
             </div>
 
-            <div>
-              <h3 className="font-display text-xl text-ivory mb-4">FAQs</h3>
-              <div className="space-y-4">
-                {[
-                  { q: 'How long does delivery take?', a: 'Standard 5–7 working days. Express 2–3 days. Next day available on request.' },
-                  { q: 'Can I return or exchange?', a: 'Yes — unworn items in original packaging within 30 days for a full refund or exchange.' },
-                  { q: 'Do you offer bespoke tailoring?', a: 'We work with select partner tailors. Contact us to discuss your requirements.' },
-                ].map(({ q, a }) => (
-                  <details key={q} className="group border-b border-white/5 pb-4">
-                    <summary className="text-ivory/70 text-sm cursor-pointer hover:text-gold transition-colors list-none flex justify-between items-center">
-                      {q}
-                      <span className="text-gold text-lg group-open:rotate-45 transition-transform duration-200 ml-4 flex-shrink-0">+</span>
-                    </summary>
-                    <p className="text-ivory/40 text-sm mt-3 leading-relaxed">{a}</p>
-                  </details>
-                ))}
-              </div>
+            {/* WhatsApp CTA */}
+            <div className="bg-white/[0.03] border border-white/5 p-8">
+              <p className="text-gold text-xs tracking-[0.2em] uppercase font-semibold mb-3">Fastest Response</p>
+              <h3 className="font-display text-2xl text-ivory mb-3">Chat on WhatsApp</h3>
+              <p className="text-ivory/40 text-sm leading-relaxed mb-6">
+                The quickest way to reach us. Send a message and we&apos;ll reply within minutes during business hours.
+              </p>
+              <a
+                href="https://wa.me/254759490008"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="btn-primary inline-flex items-center gap-3"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                Open WhatsApp
+              </a>
             </div>
           </div>
 
-          {/* Form */}
-          <div className="lg:col-span-3">
-            {sent ? (
-              <div className="h-full flex flex-col items-center justify-center text-center gap-5 py-20">
-                <CheckCircle size={48} className="text-green-400" />
-                <h2 className="font-display text-3xl text-ivory">Message Sent!</h2>
-                <p className="text-ivory/50 max-w-sm">
-                  Thank you for reaching out. We&apos;ll get back to you within one business day.
-                </p>
-                <button onClick={() => setSent(false)} className="btn-outline mt-2">
-                  Send Another
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="space-y-5">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="text-xs text-ivory/50 tracking-widest uppercase block mb-2">Your Name</label>
-                    <input
-                      required type="text" value={form.name}
-                      onChange={(e) => setForm({ ...form, name: e.target.value })}
-                      placeholder="John Doe"
-                      className="input-dark"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-xs text-ivory/50 tracking-widest uppercase block mb-2">Email</label>
-                    <input
-                      required type="email" value={form.email}
-                      onChange={(e) => setForm({ ...form, email: e.target.value })}
-                      placeholder="john@example.com"
-                      className="input-dark"
-                    />
-                  </div>
-                </div>
-                <div>
-                  <label className="text-xs text-ivory/50 tracking-widest uppercase block mb-2">Subject</label>
-                  <select
-                    value={form.subject}
-                    onChange={(e) => setForm({ ...form, subject: e.target.value })}
-                    className="input-dark"
-                    required
-                  >
-                    <option value="" className="bg-obsidian">Select a subject…</option>
-                    {['Order Enquiry', 'Returns & Exchanges', 'Sizing & Styling', 'Product Availability', 'Bespoke Tailoring', 'Other'].map((s) => (
-                      <option key={s} value={s} className="bg-obsidian">{s}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="text-xs text-ivory/50 tracking-widest uppercase block mb-2">Message</label>
-                  <textarea
-                    required value={form.message}
-                    onChange={(e) => setForm({ ...form, message: e.target.value })}
-                    placeholder="How can we help you?"
-                    rows={6}
-                    className="input-dark resize-none"
-                  />
-                </div>
-                <button
-                  type="submit"
-                  disabled={loading}
-                  className="btn-primary w-full flex items-center justify-center gap-2 disabled:opacity-60"
-                >
-                  {loading ? (
-                    <span className="flex items-center gap-2">
-                      <span className="w-4 h-4 border-2 border-obsidian/40 border-t-obsidian rounded-full animate-spin" />
-                      Sending…
-                    </span>
-                  ) : (
-                    <>
-                      <Send size={14} />
-                      Send Message
-                    </>
-                  )}
-                </button>
-              </form>
-            )}
+          {/* FAQs */}
+          <div>
+            <h3 className="font-display text-2xl text-ivory mb-6">Frequently Asked Questions</h3>
+            <div className="space-y-4">
+              {[
+                { q: 'How long does delivery take?',    a: 'Standard delivery takes 2–3 business days. Same-day delivery is available in Nairobi for orders placed before 12 PM.' },
+                { q: 'Can I return or exchange?',       a: 'Yes — unworn items in original packaging within 30 days for a full refund or exchange.' },
+                { q: 'Do you offer bespoke tailoring?', a: 'We work with select partner tailors. Contact us via WhatsApp to discuss your requirements.' },
+                { q: 'How do I track my order?',        a: 'Visit the Track Order page and enter your order number and email address for a live status update.' },
+                { q: 'What payment methods do you accept?', a: 'We accept Cash on Delivery (COD) and orders placed directly via WhatsApp.' },
+              ].map(({ q, a }) => (
+                <details key={q} className="group border-b border-white/5 pb-4">
+                  <summary className="text-ivory/70 text-sm cursor-pointer hover:text-gold transition-colors list-none flex justify-between items-center py-1">
+                    {q}
+                    <span className="text-gold text-lg group-open:rotate-45 transition-transform duration-200 ml-4 flex-shrink-0">+</span>
+                  </summary>
+                  <p className="text-ivory/40 text-sm mt-3 leading-relaxed">{a}</p>
+                </details>
+              ))}
+            </div>
           </div>
+
         </div>
       </div>
     </div>

@@ -7,7 +7,7 @@ import BackToTop from '@/components/BackToTop'
 
 export default function ConditionalChrome({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
-  const isAdmin = pathname.startsWith('/admin')
+  const isAdmin = pathname.startsWith('/mgmt-heron')
 
   if (isAdmin) {
     // Admin pages get no Navbar, no Footer — just the content

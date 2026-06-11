@@ -258,7 +258,6 @@ export default function CartPage() {
           </div>
         )}
         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', justifyContent: 'center' }}>
-          <a href={`/api/orders/receipt?orderNumber=${orderNumber}`} target="_blank" rel="noopener noreferrer" className="btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>View Receipt</a>
           <Link href="/track-order" className="btn-outline" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>Track Order</Link>
           <Link href="/products" className="btn-primary" style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>Continue Shopping <ArrowRight size={16} /></Link>
         </div>
