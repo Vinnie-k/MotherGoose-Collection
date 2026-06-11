@@ -111,7 +111,7 @@ export default function ProductDetailPage() {
   if (loading) {
     return (
       <div style={{ paddingTop: 80, minHeight: '100vh' }}>
-        <div style={{ maxWidth: 1280, margin: '0 auto', padding: '48px 24px' }}>
+        <div style={{ maxWidth: 1280, margin: '0 auto', padding: 'clamp(16px, 4vw, 48px) clamp(12px, 4vw, 24px)' }}>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 64 }}>
             <div className="skeleton" style={{ aspectRatio: '1', borderRadius: 4 }} />
             <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
@@ -166,7 +166,7 @@ export default function ProductDetailPage() {
 
   return (
     <div style={{ paddingTop: 80, minHeight: '100vh' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '48px 24px' }}>
+      <div style={{ maxWidth: 1280, margin: '0 auto', padding: 'clamp(16px, 4vw, 48px) clamp(12px, 4vw, 24px)' }}>
         {/* Breadcrumb */}
         <nav style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 40, fontSize: '0.75rem', color: 'rgba(245,242,236,0.3)' }}>
           <Link href="/" style={{ color: 'rgba(245,242,236,0.3)', textDecoration: 'none', transition: 'color 0.2s' }} onMouseEnter={e=>(e.currentTarget.style.color='#C9A84C')} onMouseLeave={e=>(e.currentTarget.style.color='rgba(245,242,236,0.3)')}>Home</Link>
@@ -181,12 +181,12 @@ export default function ProductDetailPage() {
         {/* Main grid — image left, info right */}
         <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: 40, marginBottom: 80 }} className="product-grid">
           {/* Images */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 480, width: '100%' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxWidth: 480, width: '100%', margin: '0 auto' }}>
 
             {/* Main image with slider + zoom */}
             <div
               ref={imageContainerRef}
-              style={{ position: 'relative', aspectRatio: '1', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', userSelect: 'none', cursor: isZooming ? 'crosshair' : 'zoom-in' }}
+              style={{ position: 'relative', aspectRatio: '1', overflow: 'hidden', background: 'rgba(255,255,255,0.04)', userSelect: 'none', cursor: isZooming ? 'crosshair' : 'zoom-in', maxHeight: 'min(80vw, 480px)' }}
               onMouseMove={handleMouseMove}
               onMouseEnter={() => setIsZooming(true)}
               onMouseLeave={() => setIsZooming(false)}

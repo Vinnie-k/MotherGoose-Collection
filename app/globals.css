@@ -136,3 +136,10 @@ body {
     grid-template-columns: repeat(6, 1fr) !important;
   }
 }
+/* Product page — side by side on desktop */
+@media (min-width: 768px) {
+  .product-grid {
+    grid-template-columns: 1fr 1fr !important;
+    gap: 48px !important;
+  }
+}
