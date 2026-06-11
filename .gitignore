@@ -13,7 +13,9 @@
 # env files 
 .env
 .env.local
-
+.env.development.local
+.env.test.local
+.env.production.local
 
 # data store 
 /data/orders.json
@@ -36,6 +38,9 @@ Thumbs.db
 .vscode/
 .idea/
 
-#local history 
+# Local order store
 .order-store.json
 
+# Docker
+Dockerfile
+docker-compose.yml
