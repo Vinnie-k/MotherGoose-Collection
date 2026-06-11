@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://mothergoosecollection254.co.ke
+
+# Sitemaps
+Sitemap: https://mothergoosecollection254.co.ke/sitemap.xml
