@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loadProducts } from '@/lib/product-store'
 
-export const dynamic = 'force-dynamic'
+// Cache briefly so navigating to the same product repeatedly (or the
+// related-products lookups on other pages) doesn't re-query every click.
+export const revalidate = 30
 
 export async function GET(
   _request: NextRequest,
@@ -16,6 +18,6 @@ export async function GET(
   }
 
   return NextResponse.json({ product }, {
-    headers: { 'Cache-Control': 'no-store, no-cache, must-revalidate' },
+    headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300' },
   })
 }

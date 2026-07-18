@@ -29,15 +29,28 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    fetch('/api/products')
-      .then(r => r.json())
+    let cancelled = false
+    setLoading(true)
+    fetch(`/api/products/${id}`)
+      .then(r => r.ok ? r.json() : Promise.reject(r))
       .then(data => {
-        const all: Product[] = data.products || []
-        const found = all.find(p => p.id === id)
-        setProduct(found || null)
-        setRelated(all.filter(p => p.category === found?.category && p.id !== id).slice(0, 4))
+        if (cancelled) return
+        const found: Product | null = data.product ?? null
+        setProduct(found)
+        if (found) {
+          // Only fetch products in the same category, not the whole catalog
+          return fetch(`/api/products?category=${encodeURIComponent(found.category)}`)
+            .then(r => r.json())
+            .then(catData => {
+              if (cancelled) return
+              const sameCategory: Product[] = catData.products || []
+              setRelated(sameCategory.filter(p => p.id !== id).slice(0, 4))
+            })
+        }
       })
-      .finally(() => setLoading(false))
+      .catch(() => { if (!cancelled) setProduct(null) })
+      .finally(() => { if (!cancelled) setLoading(false) })
+    return () => { cancelled = true }
   }, [id])
 
   const { addItem } = useCart()
@@ -484,8 +497,7 @@ export default function ProductDetailPage() {
             )}
             {activeTab === 'shipping' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <p><strong style={{ color: '#F5F2EC' }}>Standard Delivery (2–3 business days):</strong> Free.</p>
-                <p><strong style={{ color: '#F5F2EC' }}>Same-Day Delivery (Nairobi only):</strong> Ksh 500 flat rate.</p>
+                <p><strong style={{ color: '#F5F2EC' }}>Delivery (2–3 business days):</strong> Free.</p>
               </div>
             )}
           </div>

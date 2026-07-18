@@ -9,13 +9,6 @@ const DELIVERY_OPTIONS = [
     price: 'Free',
     desc: 'Tracked delivery via our courier partners. You will receive an email update once your order is dispatched.',
   },
-  {
-    id: 'same_day',
-    name: 'Same-Day Delivery',
-    time: 'Same Day (Nairobi only)',
-    price: 'Ksh 500 flat rate',
-    desc: 'Order before 12 PM for same-day delivery within Nairobi. Available Monday to Saturday.',
-  },
 ]
 
 export default function ShippingPage() {

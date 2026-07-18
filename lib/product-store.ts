@@ -26,13 +26,32 @@ async function getSupabase() {
   }
 }
 
+// Cache the "does the products table exist" check per server instance —
+// this almost never changes at runtime, so re-querying it on every single
+// loadProducts() call (i.e. every request) just doubles DB round-trips.
+// Only the positive result is cached indefinitely; a negative result is
+// rechecked occasionally in case the table gets created later without a
+// redeploy (e.g. someone runs the Supabase migration mid-session).
+let tableExistsCache: boolean | null = null
+let lastNegativeCheck = 0
+const RECHECK_INTERVAL_MS = 60_000
+
 async function productsTableExists(supabase: Awaited<ReturnType<typeof getSupabase>>): Promise<boolean> {
   if (!supabase) return false
+  if (tableExistsCache === true) return true
+  if (tableExistsCache === false && Date.now() - lastNegativeCheck < RECHECK_INTERVAL_MS) return false
   try {
     const { error } = await supabase.from('products').select('id').limit(1)
-    if (error?.code === '42P01' || error?.message?.includes('does not exist')) return false
+    if (error?.code === '42P01' || error?.message?.includes('does not exist')) {
+      tableExistsCache = false
+      lastNegativeCheck = Date.now()
+      return false
+    }
+    tableExistsCache = true
     return true
   } catch {
+    tableExistsCache = false
+    lastNegativeCheck = Date.now()
     return false
   }
 }

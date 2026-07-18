@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
 import { NextRequest, NextResponse } from 'next/server'
+import { revalidatePath } from 'next/cache'
 import { isAdminAuthenticated } from '@/lib/admin-auth'
 import { loadProducts, addProduct, updateProduct, deleteProduct } from '@/lib/product-store'
 import type { Product } from '@/types/database'
@@ -62,6 +63,8 @@ export async function POST(request: NextRequest) {
       updated_at: new Date().toISOString(),
     }
     const saved = await addProduct(product)
+    revalidatePath('/api/products')
+    revalidatePath('/products')
     return NextResponse.json({ product: saved }, { status: 201 })
   } catch (err) {
     const errMsg = err instanceof Error ? err.message : String(err)
@@ -97,6 +100,10 @@ export async function PUT(request: NextRequest) {
     }
     const updated = await updateProduct(body.id, updates)
     if (!updated) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    revalidatePath('/api/products')
+    revalidatePath(`/api/products/${body.id}`)
+    revalidatePath('/products')
+    revalidatePath(`/products/${body.id}`)
     return NextResponse.json({ product: updated })
   } catch (err) {
     console.error('[Admin PUT /products]', err)
@@ -113,6 +120,9 @@ export async function DELETE(request: NextRequest) {
     if (!id) return NextResponse.json({ error: 'Product ID required' }, { status: 400 })
     const ok = await deleteProduct(id)
     if (!ok) return NextResponse.json({ error: 'Product not found' }, { status: 404 })
+    revalidatePath('/api/products')
+    revalidatePath(`/api/products/${id}`)
+    revalidatePath('/products')
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('[Admin DELETE /products]', err)

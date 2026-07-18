@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loadProducts } from '@/lib/product-store'
 
-// Disable Next.js caching so product additions/deletions are reflected immediately
-export const dynamic = 'force-dynamic'
-export const revalidate = 0
+// Cache for a short window so repeat clicks don't refetch/rebuild the full
+// catalog every time. Admin writes call revalidatePath('/api/products') so
+// changes still show up quickly without disabling caching site-wide.
+export const revalidate = 30
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -30,7 +31,10 @@ export async function GET(request: NextRequest) {
 
   return NextResponse.json({ products }, {
     headers: {
-      'Cache-Control': 'no-store, no-cache, must-revalidate',
+      // Cache for 30s, serve stale for up to 5 min while revalidating in the
+      // background — repeat clicks/navigations reuse this instead of
+      // re-querying the full catalog every time.
+      'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300',
     },
   })
 }

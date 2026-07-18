@@ -3,24 +3,12 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
-import { ShoppingBag, Trash2, ArrowLeft, ArrowRight, Lock, CheckCircle, Minus, Plus, AlertCircle, Truck, Clock } from 'lucide-react'
+import { ShoppingBag, Trash2, ArrowLeft, ArrowRight, Lock, CheckCircle, Minus, Plus, AlertCircle, Truck } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { formatPrice } from '@/lib/format'
 
 type PaymentMethod = 'whatsapp'
 type CheckoutStep = 'cart' | 'info' | 'payment' | 'confirmation'
-type DeliveryOption = 'same_day' | null
-
-const DELIVERY_OPTIONS: { id: Exclude<DeliveryOption, null>; name: string; time: string; price: string; fee: () => number; desc: string }[] = [
-  {
-    id: 'same_day',
-    name: 'Same-Day Delivery',
-    time: 'Same Day — Nairobi only',
-    price: 'Ksh 500 flat rate',
-    fee: () => 500,
-    desc: 'Order before 12 PM, delivered the same day. Available only in Nairobi. Mon–Sat.',
-  },
-]
 
 interface FormData {
   email: string; firstName: string; lastName: string
@@ -46,7 +34,6 @@ export default function CartPage() {
   useEffect(() => { refreshStock() }, []) // eslint-disable-line react-hooks/exhaustive-deps
   const [step, setStep] = useState<CheckoutStep>('cart')
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('whatsapp')
-  const [deliveryOption, setDeliveryOption] = useState<DeliveryOption>(null)
   const [placingOrder, setPlacingOrder] = useState(false)
   const [orderNumber, setOrderNumber] = useState('')
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof FormData, string>>>({})
@@ -55,8 +42,8 @@ export default function CartPage() {
     address: '', city: '', zip: '', phone: '',
   })
 
-  const selectedDelivery = DELIVERY_OPTIONS.find(o => o.id === deliveryOption) || null
-  const shippingFee = selectedDelivery ? selectedDelivery.fee() : 0
+  // Delivery is always free — no delivery method selection needed
+  const shippingFee = 0
   const total = state.total + shippingFee
 
   const f = (key: keyof FormData, val: string) => {
@@ -115,7 +102,7 @@ export default function CartPage() {
             shipping: shippingFee,
             total,
             paymentMethod: 'whatsapp',
-            deliveryOption,
+            deliveryOption: null,
           }),
         })
 
@@ -127,7 +114,6 @@ export default function CartPage() {
           let details = `${i.product.name}${i.color ? ` (Color: ${i.color})` : ''}${i.size ? ` (Size: ${i.size})` : ''}`
           return `• ${details} x${i.quantity} — ${formatPrice(i.product.price * i.quantity)}`
         }).join('\n')
-        const deliveryLabel = DELIVERY_OPTIONS.find(o => o.id === deliveryOption)?.name || 'Standard Delivery'
         const message = [
           `🛍️ *New Order — Mothergoose Collection*`,
           `*Order #:* ${orderNum}`,
@@ -135,9 +121,8 @@ export default function CartPage() {
           `*Items:*`,
           itemLines,
           ``,
-          `*Delivery Method:* ${deliveryLabel}`,
           `*Subtotal:* ${formatPrice(state.total)}`,
-          `*Shipping:* ${shippingFee === 0 ? 'Free' : formatPrice(shippingFee)}`,
+          `*Shipping:* Free`,
           `*Total:* ${formatPrice(total)}`,
           ``,
           `*Customer Details:*`,
@@ -190,7 +175,7 @@ export default function CartPage() {
           shipping: shippingFee,
           total,
           paymentMethod,
-          deliveryOption,
+          deliveryOption: null,
         }),
       })
 
@@ -411,70 +396,13 @@ export default function CartPage() {
                   </div>
                 </div>
 
-                {/* ── DELIVERY OPTIONS ── */}
+                {/* ── DELIVERY ── */}
                 <div>
                   <p style={{ color: '#C9A84C', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <Truck size={13} /> Delivery Method
+                    <Truck size={13} /> Delivery
                   </p>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    {DELIVERY_OPTIONS.map((opt) => {
-                      const isSelected = deliveryOption === opt.id
-                      const fee = opt.fee()
-                      return (
-                        <button
-                          key={opt.id}
-                          type="button"
-                          onClick={() => setDeliveryOption(deliveryOption === opt.id ? null : opt.id)}
-                          style={{
-                            background: isSelected ? 'rgba(201,168,76,0.07)' : 'rgba(255,255,255,0.02)',
-                            border: `1px solid ${isSelected ? 'rgba(201,168,76,0.45)' : 'rgba(255,255,255,0.08)'}`,
-                            padding: '14px 16px',
-                            cursor: 'pointer',
-                            textAlign: 'left',
-                            width: '100%',
-                            outline: 'none',
-                            transition: 'all 0.15s',
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-                            {/* Left: radio + label */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                              {/* Radio circle */}
-                              <div style={{
-                                width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
-                                border: `2px solid ${isSelected ? '#C9A84C' : 'rgba(255,255,255,0.2)'}`,
-                                background: isSelected ? '#C9A84C' : 'transparent',
-                                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                                transition: 'all 0.15s',
-                              }}>
-                                {isSelected && <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#1a1208' }} />}
-                              </div>
-                              <div>
-                                <p style={{ color: isSelected ? '#F5F2EC' : 'rgba(245,242,236,0.75)', fontSize: '0.875rem', fontWeight: isSelected ? 600 : 400, marginBottom: 2 }}>
-                                  {opt.name}
-                                </p>
-                                <p style={{ color: 'rgba(245,242,236,0.35)', fontSize: '0.72rem', display: 'flex', alignItems: 'center', gap: 5 }}>
-                                  <Clock size={11} style={{ flexShrink: 0 }} /> {opt.time}
-                                </p>
-                              </div>
-                            </div>
-                            {/* Right: price */}
-                            <span style={{
-                              color: isSelected ? '#C9A84C' : 'rgba(245,242,236,0.55)',
-                              fontSize: '0.875rem', fontWeight: 600, flexShrink: 0,
-                            }}>
-                              {fee === 0 ? 'Free' : formatPrice(fee)}
-                            </span>
-                          </div>
-                          {/* Description — only show when selected */}
-                          {isSelected && (
-                            <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.75rem', lineHeight: 1.5, marginTop: 10, paddingLeft: 30 }}>
-                              {opt.desc}
-                            </p>
-                          )}
-                        </button>
-                      )
-                    })}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.15)' }}>
+                    <span style={{ color: '#C9A84C', fontSize: '0.875rem', fontWeight: 600 }}>Delivery is free</span>
                   </div>
                 </div>
 
@@ -496,19 +424,6 @@ export default function CartPage() {
                   <Lock size={14} style={{ color: '#4ade80' }} />
                   <span style={{ color: '#4ade80', fontSize: '0.75rem' }}>Your payment information is encrypted and secure</span>
                 </div>
-
-                {/* Delivery summary on payment step */}
-                {selectedDelivery && (
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 16px', background: 'rgba(201,168,76,0.05)', border: '1px solid rgba(201,168,76,0.15)' }}>
-                    <Truck size={15} style={{ color: '#C9A84C', flexShrink: 0 }} />
-                    <div style={{ flex: 1 }}>
-                      <span style={{ color: 'rgba(245,242,236,0.5)', fontSize: '0.72rem' }}>Delivery: </span>
-                      <span style={{ color: '#C9A84C', fontSize: '0.8rem', fontWeight: 600 }}>{selectedDelivery.name}</span>
-                      <span style={{ color: 'rgba(245,242,236,0.35)', fontSize: '0.72rem' }}> · {selectedDelivery.time}</span>
-                    </div>
-                    <button onClick={() => setStep('info')} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.35)', fontSize: '0.7rem', textDecoration: 'underline', padding: 0 }}>Change</button>
-                  </div>
-                )}
 
                 {/* Payment Method */}
                 <div style={{ background: 'rgba(37,211,102,0.05)', border: '1px solid rgba(37,211,102,0.25)', padding: 20 }}>
@@ -576,16 +491,10 @@ export default function CartPage() {
                 <span style={{ color: 'rgba(245,242,236,0.5)' }}>Subtotal</span>
                 <span style={{ color: '#F5F2EC' }}>{formatPrice(state.total)}</span>
               </div>
-              {selectedDelivery && (
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
-                  <span style={{ color: 'rgba(245,242,236,0.5)' }}>
-                    {selectedDelivery.name}
-                  </span>
-                  <span style={{ color: '#F5F2EC' }}>
-                    {formatPrice(shippingFee)}
-                  </span>
-                </div>
-              )}
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                <span style={{ color: 'rgba(245,242,236,0.5)' }}>Delivery</span>
+                <span style={{ color: '#C9A84C' }}>Free</span>
+              </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid rgba(255,255,255,0.08)', paddingTop: 12, marginTop: 4 }}>
                 <span className="font-display" style={{ color: '#F5F2EC', fontSize: '1.25rem' }}>Total</span>
                 <span className="font-display" style={{ color: '#F5F2EC', fontSize: '1.5rem' }}>{formatPrice(total)}</span>
