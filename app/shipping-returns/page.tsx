@@ -6,7 +6,7 @@ const DELIVERY_OPTIONS = [
     id: 'standard',
     name: 'Standard Delivery',
     time: '2–3 Business Days',
-    price: 'Free on orders over Ksh 5,000. Ksh 500 otherwise.',
+    price: 'Free',
     desc: 'Tracked delivery via our courier partners. You will receive an email update once your order is dispatched.',
   },
   {

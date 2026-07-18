@@ -484,8 +484,8 @@ export default function ProductDetailPage() {
             )}
             {activeTab === 'shipping' && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                <p><strong style={{ color: '#F5F2EC' }}>Standard (3–5 days):</strong> Free on orders over Ksh 5,000. Ksh 500 otherwise.</p>
-                <p><strong style={{ color: '#F5F2EC' }}>Express (2–3 days):</strong> Ksh 1,500 flat rate.</p>
+                <p><strong style={{ color: '#F5F2EC' }}>Standard Delivery (2–3 business days):</strong> Free.</p>
+                <p><strong style={{ color: '#F5F2EC' }}>Same-Day Delivery (Nairobi only):</strong> Ksh 500 flat rate.</p>
               </div>
             )}
           </div>
