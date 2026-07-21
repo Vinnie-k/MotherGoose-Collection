@@ -2,10 +2,15 @@
 
 import { usePathname } from 'next/navigation'
 import Navbar from '@/components/Navbar'
-import Footer from '@/components/Footer'
 import BackToTop from '@/components/BackToTop'
 
-export default function ConditionalChrome({ children }: { children: React.ReactNode }) {
+export default function ConditionalChrome({
+  children,
+  footer,
+}: {
+  children: React.ReactNode
+  footer: React.ReactNode
+}) {
   const pathname = usePathname()
   const isAdmin = pathname.startsWith('/mgmt-heron')
 
@@ -18,7 +23,7 @@ export default function ConditionalChrome({ children }: { children: React.ReactN
     <>
       <Navbar />
       <main className="min-h-screen">{children}</main>
-      <Footer />
+      {footer}
       <BackToTop />
     </>
   )

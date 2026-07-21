@@ -131,11 +131,14 @@ function orderToRow(order: Order) {
     total:          order.total,
     customer:       order.customer,
     address:        order.address,
-    // The `delivery_option` column in Supabase has a NOT NULL constraint.
-    // Since delivery is now always free (no method to select), we send a
-    // fixed placeholder string instead of null so inserts don't get
-    // rejected with a 23502 not-null-violation.
-    delivery_option: order.deliveryOption ?? 'none',
+    // The `delivery_option` column previously had a NOT NULL constraint AND
+    // a CHECK constraint limiting it to specific values (e.g. 'same_day').
+    // Since delivery is now always free (no method to select), the column
+    // should be relaxed in Supabase to allow NULL and drop the check:
+    //   ALTER TABLE orders DROP CONSTRAINT orders_delivery_option_check;
+    //   ALTER TABLE orders ALTER COLUMN delivery_option DROP NOT NULL;
+    // Once that's run, sending null here works cleanly.
+    delivery_option: order.deliveryOption,
     created_at:     order.createdAt,
     updated_at:     order.updatedAt,
   }

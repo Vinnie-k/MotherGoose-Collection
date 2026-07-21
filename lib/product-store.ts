@@ -2,6 +2,11 @@ import { promises as fs } from 'fs'
 import path from 'path'
 import type { Product } from '@/types/database'
 
+// On Vercel (and most serverless hosts) the filesystem is read-only outside
+// /tmp, and even /tmp doesn't persist between invocations — so writing here
+// can never serve as a real backup in production. Only used for local dev.
+const IS_SERVERLESS = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
+
 // Use a /data folder inside the project — works on Windows, Linux, and Mac
 const DATA_DIR = path.join(process.cwd(), 'data')
 const STORE_PATH = path.join(DATA_DIR, 'products.json')
@@ -69,6 +74,7 @@ export async function loadProducts(): Promise<Product[]> {
   }
 
   // 2. Try local JSON file store (dev fallback only — not for production)
+  if (IS_SERVERLESS) return []
   try {
     const raw = await fs.readFile(STORE_PATH, 'utf8')
     const products = JSON.parse(raw) as Product[]
@@ -96,7 +102,10 @@ export async function saveProducts(products: Product[]): Promise<void> {
     }
   }
 
-  // 2. Write to local file (always try this as fallback)
+  // 2. Write to local file (dev fallback only — not for production)
+  if (IS_SERVERLESS) {
+    throw new Error('Failed to save products: no database connection, and local file storage is unavailable in this environment')
+  }
   try {
     await ensureDataDir()
     await fs.writeFile(STORE_PATH, JSON.stringify(products, null, 2), 'utf8')

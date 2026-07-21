@@ -6,7 +6,7 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: '*',
         allow: '/',
-        disallow: ['/api/', '/cart', '/wishlist'],
+        disallow: ['/api/', '/cart', '/wishlist', '/mgmt-heron'],
       },
     ],
     sitemap: 'https://mothergoosecollection.com/sitemap.xml',

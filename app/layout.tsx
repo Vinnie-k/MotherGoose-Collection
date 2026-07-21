@@ -4,6 +4,7 @@ import { CartProvider } from '@/lib/cart-context'
 import { WishlistProvider } from '@/lib/wishlist-context'
 import { ToastProvider } from '@/lib/toast-context'
 import ConditionalChrome from '@/components/ConditionalChrome'
+import Footer from '@/components/Footer'
 
 export const metadata: Metadata = {
   title: 'Mothergoose Collection',
@@ -28,7 +29,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ToastProvider>
           <WishlistProvider>
             <CartProvider>
-              <ConditionalChrome>
+              <ConditionalChrome footer={<Footer />}>
                 {children}
               </ConditionalChrome>
             </CartProvider>

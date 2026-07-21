@@ -1,5 +1,3 @@
-'use client'
-
 import Link from 'next/link'
 import { CATEGORIES } from '@/lib/products'
 
@@ -45,17 +43,13 @@ export default function Footer() {
             <h4 style={{ color: '#C9A84C', fontSize: '0.6rem', letterSpacing: '0.2em', textTransform: 'uppercase', fontWeight: 600, marginBottom: 20 }}>Shop</h4>
             <ul style={{ listStyle: 'none', margin: 0, padding: 0, display: 'flex', flexDirection: 'column', gap: 12 }}>
               <li>
-                <Link href="/products" style={{ color: 'rgba(245,242,236,0.45)', fontSize: '0.85rem', textDecoration: 'none', transition: 'color 0.2s' }}
-                  onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
-                  onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.45)')}>
+                <Link href="/products" className="footer-link">
                   All Products
                 </Link>
               </li>
               {CATEGORIES.map((cat) => (
                 <li key={cat.slug}>
-                  <Link href={`/category/${cat.slug}`} style={{ color: 'rgba(245,242,236,0.45)', fontSize: '0.85rem', textDecoration: 'none', transition: 'color 0.2s' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.45)')}>
+                  <Link href={`/category/${cat.slug}`} className="footer-link">
                     {cat.label}
                   </Link>
                 </li>
@@ -73,9 +67,7 @@ export default function Footer() {
                 { label: 'About Us', href: '/about' },
               ].map(({ label, href }) => (
                 <li key={label}>
-                  <Link href={href} style={{ color: 'rgba(245,242,236,0.45)', fontSize: '0.85rem', textDecoration: 'none', transition: 'color 0.2s' }}
-                    onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
-                    onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.45)')}>
+                  <Link href={href} className="footer-link">
                     {label}
                   </Link>
                 </li>
@@ -103,14 +95,10 @@ export default function Footer() {
             © {new Date().getFullYear()} Mothergoose Collection. All rights reserved.
           </p>
           <div style={{ display: 'flex', gap: 24 }}>
-            <Link href="/privacy" style={{ color: 'rgba(245,242,236,0.2)', fontSize: '0.75rem', textDecoration: 'none', transition: 'color 0.2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.5)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.2)')}>
+            <Link href="/privacy" className="footer-legal-link">
               Privacy Policy
             </Link>
-            <Link href="/terms" style={{ color: 'rgba(245,242,236,0.2)', fontSize: '0.75rem', textDecoration: 'none', transition: 'color 0.2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.5)')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.2)')}>
+            <Link href="/terms" className="footer-legal-link">
               Terms of Service
             </Link>
           </div>

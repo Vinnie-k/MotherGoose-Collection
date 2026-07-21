@@ -169,53 +169,6 @@ export default function CartPage() {
       } finally {
         setPlacingOrder(false)
       }
-      return
-    }
-
-    setPlacingOrder(true)
-    try {
-      const res = await fetch('/api/orders', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          items: state.items.map((i) => ({
-            productId: i.product.id,
-            name: i.product.name,
-            quantity: i.quantity,
-            price: i.product.price,
-            image: i.product.images[0] || '',
-          })),
-          customer: {
-            firstName: form.firstName.trim(),
-            lastName: form.lastName.trim(),
-            email: form.email.trim(),
-            phone: form.phone.trim(),
-          },
-          address: {
-            street: form.address.trim(),
-            city: form.city.trim(),
-            zip: form.zip.trim(),
-          },
-          subtotal: state.total,
-          shipping: shippingFee,
-          total,
-          paymentMethod,
-          deliveryOption: null,
-        }),
-      })
-
-      const data = await res.json()
-      if (res.ok && data.order) {
-        setOrderNumber(data.order.orderNumber)
-        clearCart()
-        setStep('confirmation')
-      } else {
-        alert(data.error || 'Failed to place order. Please try again.')
-      }
-    } catch {
-      alert('Network error. Please check your connection and try again.')
-    } finally {
-      setPlacingOrder(false)
     }
   }
 
