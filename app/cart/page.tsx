@@ -68,6 +68,14 @@ export default function CartPage() {
   const placeOrder = async () => {
     if (paymentMethod === 'whatsapp') {
       setPlacingOrder(true)
+
+      // Open the WhatsApp tab synchronously, in direct response to the click,
+      // so browsers don't block it as a popup (calling window.open() AFTER an
+      // `await` is no longer considered a direct result of user interaction
+      // by most browsers, so it gets silently blocked). We navigate this
+      // placeholder tab to the real WhatsApp URL once the order is confirmed.
+      const waTab = window.open('', '_blank')
+
       try {
         const res = await fetch('/api/orders', {
           method: 'POST',
@@ -84,7 +92,7 @@ export default function CartPage() {
                 image: i.product.images[0] || '',
                 size: i.size,
                 color: i.color,
-                colorImage,
+                colorImage: colorImage || undefined,
               }
             }),
             customer: {
@@ -107,7 +115,16 @@ export default function CartPage() {
         })
 
         const data = await res.json()
-        const orderNum = data.order?.orderNumber || ('WA-' + Date.now().toString().slice(-6))
+
+        if (!res.ok || !data.order) {
+          // The order was NOT actually created — don't fake success, don't
+          // clear the cart, and don't send anything to WhatsApp.
+          waTab?.close()
+          alert(data.error || 'Could not place your order. Please try again or contact us directly.')
+          return
+        }
+
+        const orderNum = data.order.orderNumber
 
         const storeNumber = '254759490008'
         const itemLines = state.items.map(i => {
@@ -134,12 +151,20 @@ export default function CartPage() {
           `${form.address}, ${form.city}${form.zip ? ` ${form.zip}` : ''}`,
         ].join('\n')
 
-        window.open(`https://wa.me/${storeNumber}?text=${encodeURIComponent(message)}`, '_blank')
+        const waUrl = `https://wa.me/${storeNumber}?text=${encodeURIComponent(message)}`
+        if (waTab) {
+          waTab.location.href = waUrl
+        } else {
+          // Popup was blocked even before the fetch — fall back to same-tab
+          // navigation so the order info isn't lost.
+          window.open(waUrl, '_blank') || (window.location.href = waUrl)
+        }
 
         setOrderNumber(orderNum)
         clearCart()
         setStep('confirmation')
       } catch {
+        waTab?.close()
         alert('Could not place order. Please check your connection and try again.')
       } finally {
         setPlacingOrder(false)

@@ -40,7 +40,13 @@ export interface Order {
   updatedAt: string
 }
 
-// ─── JSON file (local dev fallback) ──────────────────────────────────────────
+// ─── JSON file (local dev fallback only) ─────────────────────────────────────
+// On Vercel (and most serverless hosts) the filesystem is read-only outside
+// /tmp, and even /tmp is wiped between invocations — so this file can never
+// actually serve as a durable backup in production. We only use it for local
+// dev, and skip it entirely elsewhere to avoid noisy, meaningless ENOENT logs.
+
+const IS_SERVERLESS = Boolean(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME)
 
 const DATA_DIR   = path.join(process.cwd(), 'data')
 const STORE_PATH = path.join(DATA_DIR, 'orders.json')
@@ -50,6 +56,7 @@ async function ensureDataDir() {
 }
 
 async function readFile(): Promise<Order[]> {
+  if (IS_SERVERLESS) return []
   try {
     const raw    = await fs.readFile(STORE_PATH, 'utf8')
     const parsed = JSON.parse(raw)
@@ -58,6 +65,7 @@ async function readFile(): Promise<Order[]> {
 }
 
 async function writeFile(orders: Order[]): Promise<void> {
+  if (IS_SERVERLESS) return
   try {
     await ensureDataDir()
     await fs.writeFile(STORE_PATH, JSON.stringify(orders, null, 2), 'utf8')
@@ -102,7 +110,9 @@ function rowToOrder(row: Record<string, unknown>): Order {
     total:         Number(row.total),
     customer,
     address,
-    deliveryOption: (row.delivery_option as Order['deliveryOption']) ?? null,
+    // 'none' is the placeholder we write for orders with no delivery method
+    // (required because the column is NOT NULL) — treat it as null for display.
+    deliveryOption: row.delivery_option === 'same_day' ? 'same_day' : null,
     createdAt: row.created_at as string,
     updatedAt: row.updated_at as string,
   }
@@ -121,7 +131,11 @@ function orderToRow(order: Order) {
     total:          order.total,
     customer:       order.customer,
     address:        order.address,
-    delivery_option: order.deliveryOption,
+    // The `delivery_option` column in Supabase has a NOT NULL constraint.
+    // Since delivery is now always free (no method to select), we send a
+    // fixed placeholder string instead of null so inserts don't get
+    // rejected with a 23502 not-null-violation.
+    delivery_option: order.deliveryOption ?? 'none',
     created_at:     order.createdAt,
     updated_at:     order.updatedAt,
   }
@@ -172,7 +186,9 @@ export async function loadOrders(): Promise<Order[]> {
       return [...data.map(r => rowToOrder(r as Record<string, unknown>)), ...fileOnly]
         .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
     }
-    console.error('[OrderStore] loadOrders error:', error?.message, error?.code)
+    console.error(
+      `[OrderStore] loadOrders error — code=${error?.code} details=${error?.details} hint=${error?.hint} message=${error?.message}`
+    )
   }
   return (await readFile()).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
 }
@@ -198,16 +214,27 @@ export async function createOrder(
       for (const item of order.items) {
         await decrementStockInSupabase(sb, item.productId, item.quantity)
       }
-      // Also back up to local file
+      // Also back up to local file (local dev only — no-op on serverless)
       const existing = await readFile()
       await writeFile([order, ...existing])
       return order
     }
-    console.error('[OrderStore] createOrder Supabase error:', error.message, error.code)
-    // Fall through to file store below
+    console.error(
+      `[OrderStore] createOrder Supabase error — code=${error.code} details=${error.details} hint=${error.hint} message=${error.message}`
+    )
+    // Fall through to file store below — but on serverless (Vercel etc.)
+    // that file store is a no-op, so a Supabase failure there means the
+    // order truly didn't save. Don't pretend otherwise.
+    if (IS_SERVERLESS) {
+      throw new Error(`Order could not be saved (${error.code}: ${error.message})`)
+    }
+  } else if (IS_SERVERLESS) {
+    // No Supabase connection at all in a serverless environment — there is
+    // no durable place to store this order.
+    throw new Error('Order could not be saved: no database connection configured')
   }
 
-  // ── File store fallback (no Supabase or insert failed) ──────────────────
+  // ── File store fallback (local dev only, when Supabase is unavailable) ──
   const existing = await readFile()
   await writeFile([order, ...existing])
 
@@ -271,7 +298,9 @@ export async function updateOrderStatus(id: string, status: Order['status']): Pr
       if (fi !== -1) { fileOrders[fi] = updated; await writeFile(fileOrders) }
       return updated
     }
-    if (error) console.error('[OrderStore] updateStatus Supabase error:', error.message)
+    if (error) console.error(
+      `[OrderStore] updateStatus Supabase error — code=${error.code} details=${error.details} hint=${error.hint} message=${error.message}`
+    )
   }
 
   // File fallback
@@ -311,7 +340,9 @@ export async function getOrderByNumber(orderNumber: string): Promise<Order | nul
     // Fall back to file store for any error (not found, network, schema issues, etc.)
     if (error) {
       if (error.code !== 'PGRST116') {
-        console.error('[OrderStore] getOrderByNumber error:', error.message, error.code)
+        console.error(
+          `[OrderStore] getOrderByNumber error — code=${error.code} details=${error.details} hint=${error.hint} message=${error.message}`
+        )
       }
       const fileOrders = await readFile()
       return fileOrders.find(o => o.orderNumber === orderNumber) ?? null
