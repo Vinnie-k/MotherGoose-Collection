@@ -242,9 +242,13 @@ export default function TrackOrderPage() {
                 {order.items.map((item, i) => (
                   <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                      {item.image && <Image src={item.image} alt={item.name} width={40} height={40} style={{ objectFit: 'cover', background: 'rgba(255,255,255,0.04)' }} />}
+                      {(item.colorImage || item.image) && <Image src={item.colorImage || item.image} alt={item.name} width={40} height={40} style={{ objectFit: 'cover', background: 'rgba(255,255,255,0.04)' }} />}
                       <div>
                         <p style={{ color: '#F5F2EC', fontSize: '0.875rem' }}>{item.name}</p>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 2, marginBottom: 2 }}>
+                          {item.color && <span style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.7rem' }}>Color: {item.color}</span>}
+                          {item.size && <span style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.7rem' }}>Size: {item.size}</span>}
+                        </div>
                         <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.75rem' }}>Qty: {item.quantity}</p>
                       </div>
                     </div>
