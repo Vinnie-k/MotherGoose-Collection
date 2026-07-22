@@ -2,10 +2,11 @@ import type { Metadata } from 'next'
 import { loadProducts } from '@/lib/product-store'
 import ProductsFilterGrid from '@/components/ProductsFilterGrid'
 
-// Revalidate every 30s — matches the API route's cache window, so newly
-// added/edited products show up quickly without every visit hitting
-// Supabase directly.
-export const revalidate = 30
+// Revalidate every hour as a background safety net — admin edits push
+// instantly via revalidatePath() in the admin routes, so this window only
+// controls worst-case staleness, not actual update speed. A short window
+// here just multiplies ISR writes on Vercel's free tier for no real benefit.
+export const revalidate = 3600
 
 export const metadata: Metadata = {
   title: 'All Products — Mothergoose Collection',

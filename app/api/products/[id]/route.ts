@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loadProducts } from '@/lib/product-store'
 
-// Cache briefly so navigating to the same product repeatedly (or the
-// related-products lookups on other pages) doesn't re-query every click.
-export const revalidate = 30
+// Cache for an hour as a background safety net — admin edits push instantly
+// via revalidatePath() in the admin routes, so this only bounds worst-case
+// staleness, not actual update speed.
+export const revalidate = 3600
 
 export async function GET(
   _request: NextRequest,
@@ -18,6 +19,6 @@ export async function GET(
   }
 
   return NextResponse.json({ product }, {
-    headers: { 'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300' },
+    headers: { 'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400' },
   })
 }

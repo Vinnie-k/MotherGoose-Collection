@@ -5,10 +5,13 @@ import { loadProducts } from '@/lib/product-store'
 import ProductDetailClient from '@/components/ProductDetailClient'
 import type { Product } from '@/types/database'
 
-// Revalidate this page's data every 30s — matches the API route's cache
-// window, so admin edits show up quickly without every visit hitting
-// Supabase directly.
-export const revalidate = 30
+// Revalidate every hour as a background safety net — admin edits push
+// instantly via revalidatePath() in the admin routes, so this window only
+// controls worst-case staleness, not actual update speed. This is the
+// biggest lever on Vercel's ISR-write usage: every distinct product page
+// gets its own write on each revalidation, so a short window here is what
+// multiplies fastest across a real catalog.
+export const revalidate = 3600
 
 // Wrapped in React's cache() so that generateMetadata() and the page
 // component — which both need this data — only trigger one actual

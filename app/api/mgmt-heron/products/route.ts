@@ -127,6 +127,7 @@ export async function DELETE(request: NextRequest) {
     revalidatePath('/api/products')
     revalidatePath(`/api/products/${id}`)
     revalidatePath('/products')
+    revalidatePath(`/products/${id}`)
     return NextResponse.json({ success: true })
   } catch (err) {
     console.error('[Admin DELETE /products]', err)

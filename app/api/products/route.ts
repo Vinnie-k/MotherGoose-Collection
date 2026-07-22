@@ -1,10 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loadProducts } from '@/lib/product-store'
 
-// Cache for a short window so repeat clicks don't refetch/rebuild the full
-// catalog every time. Admin writes call revalidatePath('/api/products') so
-// changes still show up quickly without disabling caching site-wide.
-export const revalidate = 30
+// Cache for an hour as a background safety net — admin writes call
+// revalidatePath('/api/products') so changes show up quickly regardless.
+// A short window here just adds unnecessary Supabase queries and ISR writes
+// for no real benefit to freshness.
+export const revalidate = 3600
 
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url)
@@ -34,7 +35,7 @@ export async function GET(request: NextRequest) {
       // Cache for 30s, serve stale for up to 5 min while revalidating in the
       // background — repeat clicks/navigations reuse this instead of
       // re-querying the full catalog every time.
-      'Cache-Control': 'public, s-maxage=30, stale-while-revalidate=300',
+      'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
     },
   })
 }

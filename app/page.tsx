@@ -5,10 +5,13 @@ import { ArrowRight } from 'lucide-react'
 import { loadProducts } from '@/lib/product-store'
 import ProductCard from '@/components/ProductCard'
 
-// Revalidate every 60s — matches the previous client-side fetch's cache
-// window, so admin-added/edited products show up quickly without every
-// visit hitting Supabase directly.
-export const revalidate = 60
+// Revalidate every hour as a background safety net — admin edits push
+// instantly via revalidatePath() in the admin routes, so this window only
+// controls the worst-case staleness if that somehow didn't fire. A short
+// window here just multiplies ISR writes on Vercel's free tier for no real
+// benefit, since visitors never wait on this — they always get the cached
+// page instantly either way.
+export const revalidate = 3600
 
 const CATEGORY_IMAGES = [
   { slug: 'watches', label: 'Watches', image: 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=600&q=80' },
