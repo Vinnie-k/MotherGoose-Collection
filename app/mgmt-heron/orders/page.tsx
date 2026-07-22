@@ -252,7 +252,7 @@ export default function AdminOrdersPage() {
               firstName: updatedOrder.customer.firstName,
               orderNumber: updatedOrder.orderNumber,
               status,
-              items: updatedOrder.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price, color: i.color, size: i.size })),
+              items: updatedOrder.items.map(i => ({ name: i.name, quantity: i.quantity, price: i.price })),
               total: updatedOrder.total,
               deliveryOption: updatedOrder.deliveryOption,
             }),

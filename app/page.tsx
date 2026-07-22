@@ -1,12 +1,14 @@
-'use client'
-
-import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 
+import { loadProducts } from '@/lib/product-store'
 import ProductCard from '@/components/ProductCard'
-import type { Product } from '@/types/database'
+
+// Revalidate every 60s — matches the previous client-side fetch's cache
+// window, so admin-added/edited products show up quickly without every
+// visit hitting Supabase directly.
+export const revalidate = 60
 
 const CATEGORY_IMAGES = [
   { slug: 'watches', label: 'Watches', image: 'https://images.unsplash.com/photo-1587836374828-4dbafa94cf0e?w=600&q=80' },
@@ -17,23 +19,12 @@ const CATEGORY_IMAGES = [
   { slug: 'bags', label: 'Bags', image: 'https://images.unsplash.com/photo-1591561954555-607968c989ab?w=600&q=80' },
 ]
 
-export default function HomePage() {
-  const [featured, setFeatured] = useState<Product[]>([])
-  const [newArrivals, setNewArrivals] = useState<Product[]>([])
-
-  // Load live products from the API (includes admin-added products)
-  useEffect(() => {
-    fetch('/api/products', { next: { revalidate: 60 } })
-      .then(r => r.json())
-      .then(data => {
-        const all: Product[] = data.products || []
-        if (all.length > 0) {
-          setFeatured(all.filter(p => p.featured).slice(0, 4))
-          setNewArrivals(all.filter(p => p.new_arrival).slice(0, 4))
-        }
-      })
-      .catch(() => {}) // silently use defaults on error
-  }, [])
+export default async function HomePage() {
+  // Fetched directly on the server — same data source the API route uses,
+  // no client-side fetch-after-mount, no loading flash.
+  const allProducts = await loadProducts()
+  const featured = allProducts.filter(p => p.featured).slice(0, 4)
+  const newArrivals = allProducts.filter(p => p.new_arrival).slice(0, 4)
 
   return (
     <div style={{ overflowX: 'hidden' }}>
@@ -72,13 +63,11 @@ export default function HomePage() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 8 }} className="category-grid">
           {CATEGORY_IMAGES.map((cat, i) => (
             <Link key={cat.slug} href={`/category/${cat.slug}`}
-              className={`stagger-${i + 1}`}
-              style={{ display: 'block', textDecoration: 'none', position: 'relative', overflow: 'hidden', aspectRatio: '2/3', transition: 'all 0.3s' }}
-              onMouseEnter={e => { const img = e.currentTarget.querySelector('.cat-img') as HTMLElement; if (img) img.style.transform = 'scale(1.08)' }}
-              onMouseLeave={e => { const img = e.currentTarget.querySelector('.cat-img') as HTMLElement; if (img) img.style.transform = 'scale(1)' }}>
+              className={`stagger-${i + 1} category-card`}
+              style={{ textDecoration: 'none', position: 'relative', overflow: 'hidden', aspectRatio: '2/3', transition: 'all 0.3s' }}>
               <Image className="cat-img" src={cat.image} alt={cat.label}
                 fill sizes="(max-width: 768px) 50vw, 180px"
-                style={{ objectFit: 'cover', transition: 'transform 0.6s ease' }} />
+                style={{ objectFit: 'cover' }} />
               {/* Gradient overlay */}
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,10,15,0.85) 0%, rgba(10,10,15,0.2) 50%, transparent 100%)' }} />
               {/* Label */}

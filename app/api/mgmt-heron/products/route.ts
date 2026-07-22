@@ -23,7 +23,7 @@ export async function GET(request: NextRequest) {
   try {
     const products = await loadProducts()
     return NextResponse.json({ products })
-  } catch {
+  } catch (err) {
     return NextResponse.json({ error: 'Failed to load products' }, { status: 500 })
   }
 }

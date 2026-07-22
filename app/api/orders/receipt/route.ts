@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getOrderByNumber, type Order, type OrderItem } from '@/lib/order-store'
+import { getOrderByNumber } from '@/lib/order-store'
+import { formatPrice } from '@/lib/format'
 
 export async function GET(req: NextRequest) {
   try {
@@ -31,10 +32,10 @@ export async function GET(req: NextRequest) {
   }
 }
 
-function generateReceipt(order: Order) {
+function generateReceipt(order: any) {
   const itemsHTML = order.items
     .map(
-      (item: OrderItem) =>
+      (item: any) =>
         `
     <tr>
       <td style="padding: 12px; border-bottom: 1px solid #e5e5e5;">
@@ -166,7 +167,7 @@ function generateReceipt(order: Order) {
   `
 }
 
-function generatePDFReceipt(order: Order) {
+function generatePDFReceipt(order: any) {
   // Simple PDF generation - can be enhanced with a library like jsPDF
   const content = `
 MOTHERGOOSE - ORDER RECEIPT
@@ -186,7 +187,7 @@ ${order.address.street}
 ${order.address.city} ${order.address.zip}
 
 ITEMS ORDERED:
-${order.items.map((item: OrderItem) => `${item.name}${item.color ? ` (Color: ${item.color})` : ''}${item.size ? ` (Size: ${item.size})` : ''} x${item.quantity} - Ksh ${(item.price * item.quantity).toLocaleString()}`).join('\n')}
+${order.items.map((item: any) => `${item.name} x${item.quantity} - Ksh ${(item.price * item.quantity).toLocaleString()}`).join('\n')}
 
 SUBTOTAL: Ksh ${order.subtotal.toLocaleString()}
 DELIVERY FEE: Ksh ${order.shipping.toLocaleString()}

@@ -13,10 +13,21 @@ const nextConfig = {
       { protocol: 'https', hostname: '*.imgbb.com' },
       { protocol: 'https', hostname: 'res.cloudinary.com' },
     ],
-    // Supabase Storage resolves to IPv6 NAT64 addresses in some environments.
-    // Using unoptimized bypasses Next.js image proxy entirely for those URLs,
-    // so the browser fetches them directly — no private-IP block.
-    unoptimized: true,
+    // NOTE: this was previously set to `true` because Supabase Storage was
+    // believed to resolve to IPv6 NAT64 addresses that Next.js's built-in
+    // image optimizer couldn't reach in some environments. That was tested
+    // again on 2026-07-22 (local production build, hitting /_next/image
+    // directly against a real Supabase Storage URL) and optimization now
+    // works correctly — images load, resize, and convert to WebP as
+    // expected. Re-enabling real optimization here for meaningfully smaller,
+    // faster-loading images across the whole site.
+    //
+    // If Supabase images ever start failing to load in production after a
+    // deploy, that's the first thing to check — revert this to `true` as an
+    // immediate fix, then investigate.
+    unoptimized: false,
+    formats: ['image/webp'],
+    qualities: [75],
   },
 
   async headers() {

@@ -1,17 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loadOrders } from '@/lib/order-store'
 
-interface ReportRow {
-  orderNo: string
-  name: string
-  phone: string
-  city: string
-  total: number
-  status: string
-  date: string
-  items: number
-}
-
 export async function GET(req: NextRequest) {
   try {
     const token = req.cookies.get('admin-token')?.value
@@ -50,7 +39,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-function exportToExcel(data: ReportRow[]) {
+function exportToExcel(data: any[]) {
   // Create CSV content
   const headers = ['Order No', 'Name', 'Phone', 'City', 'Items', 'Total (KSh)', 'Status', 'Date']
   const csvContent = [
@@ -79,7 +68,7 @@ function exportToExcel(data: ReportRow[]) {
   })
 }
 
-function exportToPDF(data: ReportRow[]) {
+function exportToPDF(data: any[]) {
   // Create simple text-based PDF content
   let pdfContent = `
 %PDF-1.4
