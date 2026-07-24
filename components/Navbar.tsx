@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
-import { ShoppingBag, Search, Menu, X, ChevronDown, Heart } from 'lucide-react'
+import { ShoppingBag, Search, Menu, X, ChevronDown, Heart, MoreHorizontal } from 'lucide-react'
 import { useCart } from '@/lib/cart-context'
 import { useWishlist } from '@/lib/wishlist-context'
 import { CATEGORIES } from '@/lib/products'
@@ -16,10 +16,12 @@ export default function Navbar() {
   const [searchQuery, setSearchQuery] = useState('')
   const [cartOpen, setCartOpen] = useState(false)
   const [shopOpen, setShopOpen] = useState(false)
+  const [actionsMenuOpen, setActionsMenuOpen] = useState(false)
   const router = useRouter()
   const { state, removeItem, updateQuantity, refreshStock } = useCart()
   const { state: wishlistState } = useWishlist()
   const searchRef = useRef<HTMLInputElement>(null)
+  const actionsMenuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 20)
@@ -30,6 +32,17 @@ export default function Navbar() {
   useEffect(() => {
     if (searchOpen) setTimeout(() => searchRef.current?.focus(), 50)
   }, [searchOpen])
+
+  useEffect(() => {
+    if (!actionsMenuOpen) return
+    const onClickOutside = (e: MouseEvent) => {
+      if (actionsMenuRef.current && !actionsMenuRef.current.contains(e.target as Node)) {
+        setActionsMenuOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', onClickOutside)
+    return () => document.removeEventListener('mousedown', onClickOutside)
+  }, [actionsMenuOpen])
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()
@@ -98,36 +111,94 @@ export default function Navbar() {
 
           {/* Actions */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-            {/* Search */}
-            <button onClick={() => setSearchOpen(!searchOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.7)', transition: 'color 0.2s', padding: 0 }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.7)')}>
-              <Search size={20} />
-            </button>
+            {/* Inline icon group — visible while there's room, hidden once the viewport gets tight */}
+            <div className="actions-inline" style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
+              {/* Search */}
+              <button onClick={() => setSearchOpen(!searchOpen)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.7)', transition: 'color 0.2s', padding: 0 }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.7)')}>
+                <Search size={20} />
+              </button>
 
-            {/* Wishlist */}
-            <Link href="/wishlist" style={{ position: 'relative', color: 'rgba(245,242,236,0.7)', textDecoration: 'none', transition: 'color 0.2s' }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.7)')}>
-              <Heart size={20} />
-              {wishlistState.items.length > 0 && (
-                <span style={{ position: 'absolute', top: -8, right: -8, background: '#dc2626', color: 'white', fontSize: '0.6rem', fontWeight: 700, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {wishlistState.items.length}
-                </span>
-              )}
-            </Link>
+              {/* Wishlist */}
+              <Link href="/wishlist" style={{ position: 'relative', color: 'rgba(245,242,236,0.7)', textDecoration: 'none', transition: 'color 0.2s' }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.7)')}>
+                <Heart size={20} />
+                {wishlistState.items.length > 0 && (
+                  <span style={{ position: 'absolute', top: -8, right: -8, background: '#dc2626', color: 'white', fontSize: '0.6rem', fontWeight: 700, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {wishlistState.items.length}
+                  </span>
+                )}
+              </Link>
 
-            {/* Cart */}
-            <button onClick={() => { setCartOpen(!cartOpen); if (!cartOpen) refreshStock() }} style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.7)', transition: 'color 0.2s', padding: 0 }}
-              onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
-              onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.7)')}>
-              <ShoppingBag size={20} />
-              {state.itemCount > 0 && (
-                <span style={{ position: 'absolute', top: -8, right: -8, background: '#C9A84C', color: '#0A0A0F', fontSize: '0.6rem', fontWeight: 700, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {state.itemCount}
-                </span>
+              {/* Cart */}
+              <button onClick={() => { setCartOpen(!cartOpen); if (!cartOpen) refreshStock() }} style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.7)', transition: 'color 0.2s', padding: 0 }}
+                onMouseEnter={e => (e.currentTarget.style.color = '#C9A84C')}
+                onMouseLeave={e => (e.currentTarget.style.color = 'rgba(245,242,236,0.7)')}>
+                <ShoppingBag size={20} />
+                {state.itemCount > 0 && (
+                  <span style={{ position: 'absolute', top: -8, right: -8, background: '#C9A84C', color: '#0A0A0F', fontSize: '0.6rem', fontWeight: 700, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {state.itemCount}
+                  </span>
+                )}
+              </button>
+            </div>
+
+            {/* Collapsed trigger — appears once the inline group no longer fits, bundling Search/Wishlist/Cart into a popup */}
+            <div className="actions-collapsed" ref={actionsMenuRef} style={{ position: 'relative', display: 'none' }}>
+              <button
+                onClick={() => setActionsMenuOpen(!actionsMenuOpen)}
+                aria-label="Open search, wishlist and cart menu"
+                aria-expanded={actionsMenuOpen}
+                aria-controls="actions-popup"
+                style={{ position: 'relative', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.7)', padding: 0, display: 'flex' }}>
+                <MoreHorizontal size={22} />
+                {state.itemCount > 0 && (
+                  <span style={{ position: 'absolute', top: -8, right: -8, background: '#C9A84C', color: '#0A0A0F', fontSize: '0.6rem', fontWeight: 700, width: 18, height: 18, borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    {state.itemCount}
+                  </span>
+                )}
+              </button>
+
+              {actionsMenuOpen && (
+                <div id="actions-popup" role="menu" style={{
+                  position: 'absolute', top: '100%', right: 0, marginTop: 12,
+                  backgroundColor: '#0d0d1a', border: '1px solid rgba(255,255,255,0.1)',
+                  boxShadow: '0 25px 50px rgba(0,0,0,0.5)', padding: '6px 0', minWidth: 200, zIndex: 100,
+                }}>
+                  <button
+                    role="menuitem"
+                    onClick={() => { setActionsMenuOpen(false); setSearchOpen(!searchOpen) }}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.75)', fontSize: '0.78rem', letterSpacing: '0.05em', textAlign: 'left' }}>
+                    <Search size={16} /> Search
+                  </button>
+                  <Link
+                    href="/wishlist"
+                    role="menuitem"
+                    onClick={() => setActionsMenuOpen(false)}
+                    style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', color: 'rgba(245,242,236,0.75)', fontSize: '0.78rem', letterSpacing: '0.05em', textDecoration: 'none' }}>
+                    <Heart size={16} /> Wishlist
+                    {wishlistState.items.length > 0 && (
+                      <span style={{ marginLeft: 'auto', background: '#dc2626', color: 'white', fontSize: '0.6rem', fontWeight: 700, minWidth: 18, height: 18, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
+                        {wishlistState.items.length}
+                      </span>
+                    )}
+                  </Link>
+                  <button
+                    role="menuitem"
+                    onClick={() => { setActionsMenuOpen(false); setCartOpen(true); refreshStock() }}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 12, padding: '11px 18px', background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.75)', fontSize: '0.78rem', letterSpacing: '0.05em', textAlign: 'left' }}>
+                    <ShoppingBag size={16} /> Cart
+                    {state.itemCount > 0 && (
+                      <span style={{ marginLeft: 'auto', background: '#C9A84C', color: '#0A0A0F', fontSize: '0.6rem', fontWeight: 700, minWidth: 18, height: 18, borderRadius: 9, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '0 5px' }}>
+                        {state.itemCount}
+                      </span>
+                    )}
+                  </button>
+                </div>
               )}
-            </button>
+            </div>
 
             {/* Mobile menu toggle */}
             <button onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle navigation menu" aria-expanded={mobileOpen} aria-controls="mobile-nav" style={{ background: 'none', border: 'none', cursor: 'pointer', color: 'rgba(245,242,236,0.7)', padding: 0, display: 'block' }} className="md-hide">
@@ -244,6 +315,13 @@ export default function Navbar() {
       <style>{`
         @media (min-width: 768px) { .md-flex { display: flex !important; } .md-hide { display: none !important; } }
         @media (max-width: 767px) { .md-flex { display: none !important; } }
+
+        /* Below 480px there's no longer room for Search + Wishlist + Cart side by side
+           next to the logo and the hamburger — fold them into a single popup menu. */
+        @media (max-width: 479px) {
+          .actions-inline { display: none !important; }
+          .actions-collapsed { display: flex !important; }
+        }
       `}</style>
     </>
   )
