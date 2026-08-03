@@ -48,10 +48,12 @@ const nextConfig = {
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: blob: https://images.unsplash.com https://*.supabase.co https://*.supabase.in https://res.cloudinary.com https://i.ibb.co https://*.imgbb.com",
-              // Analytics beacons go to /_vercel/insights/* on our own domain
-              // in production ('self' covers that), but local dev fetches the
-              // script/vitals endpoint directly from Vercel's CDN — these two
-              // extra domains are only exercised in dev, harmless elsewhere.
+              // Analytics + Speed Insights beacons go to /_vercel/insights/*
+              // and /_vercel/speed-insights/* on our own domain in
+              // production ('self' covers that), but local dev fetches the
+              // script/vitals endpoints directly from Vercel's CDN — these
+              // two extra domains are only exercised in dev, harmless
+              // elsewhere. Both tools share the same two domains.
               "connect-src 'self' https://*.supabase.co https://api.resend.com https://vitals.vercel-insights.com https://va.vercel-scripts.com",
               "frame-ancestors 'none'",
             ].join('; '),
