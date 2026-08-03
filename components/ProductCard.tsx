@@ -93,14 +93,14 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
             border: wished ? '1px solid rgba(248,113,113,0.6)' : '1px solid rgba(255,255,255,0.15)',
             background: wished ? 'rgba(239,68,68,0.2)' : 'rgba(10,10,15,0.65)',
             color: wished ? '#f87171' : 'rgba(245,242,236,0.5)',
-            cursor: 'pointer', transition: 'opacity 0.2s',
+            cursor: 'pointer', opacity: wished ? 1 : 0, transition: 'opacity 0.2s',
           }}>
           <Heart size={12} fill={wished ? 'currentColor' : 'none'} />
         </button>
 
         {/* Quick Add */}
         <div className="quick-add"
-          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, transition: 'transform 0.3s' }}>
+          style={{ position: 'absolute', bottom: 0, left: 0, right: 0, transform: 'translateY(100%)', transition: 'transform 0.3s' }}>
           <button
             onClick={handleAddToCart}
             disabled={product.stock === 0}
@@ -145,15 +145,9 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
       </div>
 
       <style>{`
-        .quick-add { transform: translateY(0); }
-        .wishlist-btn { opacity: 1; }
-        @media (hover: hover) and (pointer: fine) {
-          .quick-add { transform: translateY(100%); }
-          .wishlist-btn { opacity: ${wished ? 1 : 0}; }
-          .product-card-img:hover .product-img { transform: scale(1.06); }
-          .product-card-img:hover .quick-add { transform: translateY(0) !important; }
-          .product-card-img:hover .wishlist-btn { opacity: 1 !important; }
-        }
+        .product-card-img:hover .product-img { transform: scale(1.06); }
+        .product-card-img:hover .quick-add { transform: translateY(0) !important; }
+        .product-card-img:hover .wishlist-btn { opacity: 1 !important; }
       `}</style>
     </Link>
   )

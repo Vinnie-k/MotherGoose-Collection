@@ -156,6 +156,27 @@ body {
 .category-card { display: block; }
 .category-card .cat-img { transition: transform 0.6s ease; }
 .category-card:hover .cat-img { transform: scale(1.08); }
+
+/* Homepage Featured/New Arrivals grids — explicit column counts per
+   breakpoint, rather than auto-fill, so a 5-item row never leaves a lone
+   last item stretched to fill leftover space (which would distort its
+   square product image on narrow/odd-numbered layouts). */
+.home-product-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 20px;
+}
+@media (min-width: 640px) {
+  .home-product-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+}
+@media (min-width: 1024px) {
+  .home-product-grid {
+    grid-template-columns: repeat(5, 1fr);
+  }
+}
 /* Product page — side by side on desktop */
 @media (min-width: 768px) {
   .product-grid {

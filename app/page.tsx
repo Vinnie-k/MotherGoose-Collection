@@ -10,7 +10,10 @@ import ProductCard from '@/components/ProductCard'
 // controls the worst-case staleness if that somehow didn't fire. A short
 // window here just multiplies ISR writes on Vercel's free tier for no real
 // benefit, since visitors never wait on this — they always get the cached
-// page instantly either way.
+// page instantly either way. This also comfortably fits inside the featured
+// / new-arrivals rotation window (every 6 hours, see ROTATION_HOURS below) —
+// the page gets several chances to pick up each new rotation without
+// needing a shorter, more expensive revalidate window.
 export const revalidate = 3600
 
 const CATEGORY_IMAGES = [
@@ -22,12 +25,122 @@ const CATEGORY_IMAGES = [
   { slug: 'bags', label: 'Bags', image: 'https://images.unsplash.com/photo-1591561954555-607968c989ab?w=600&q=80' },
 ]
 
+// Picks up to `count` products, favouring at most one per category before
+// taking a second from any category. This stops the homepage from showing
+// e.g. four shoes just because shoes happen to be the only category with
+// products tagged `featured`/`new_arrival` in admin — the homepage should
+// reflect the actual breadth of the catalogue, not whichever category was
+// tagged most. `exclude` lets New Arrivals avoid repeating whatever
+// Featured already showed, so the two sections don't end up identical.
+//
+// `seed` controls the order products are considered in — passing a
+// different seed reshuffles which products win when there are more
+// candidates than slots, which is how the rotation below works.
+function pickDiverse<T extends { category: string; id: string }>(
+  pool: T[],
+  count: number,
+  exclude: Set<string> = new Set(),
+  seed = 0
+): T[] {
+  const available = seededShuffle(pool.filter(p => !exclude.has(p.id)), seed)
+  const byCategory = new Map<string, T[]>()
+  for (const product of available) {
+    const list = byCategory.get(product.category) ?? []
+    list.push(product)
+    byCategory.set(product.category, list)
+  }
+
+  const result: T[] = []
+  let round = 0
+  // Round-robin across categories: take one from each category per round,
+  // so no single category can dominate the list while others go unseen.
+  while (result.length < count) {
+    let addedThisRound = false
+    for (const [, list] of byCategory) {
+      if (result.length >= count) break
+      const next = list[round]
+      if (next) {
+        result.push(next)
+        addedThisRound = true
+      }
+    }
+    if (!addedThisRound) break // ran out of products across all categories
+    round += 1
+  }
+  return result
+}
+
+// Deterministic shuffle: same seed always produces the same order, but a
+// different seed produces a different order. This is what makes the
+// rotation below work — everyone sees the same picks within a given time
+// window (so it's cacheable and consistent for a visit), but the picks
+// change automatically once the window rolls over, with no admin work.
+function seededShuffle<T>(items: T[], seed: number): T[] {
+  const arr = [...items]
+  let s = seed || 1
+  const next = () => {
+    // Simple deterministic PRNG (mulberry32) — good enough for shuffling
+    // display order, not for anything security-sensitive.
+    s |= 0; s = (s + 0x6D2B79F5) | 0
+    let t = Math.imul(s ^ (s >>> 15), 1 | s)
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296
+  }
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(next() * (i + 1))
+    ;[arr[i], arr[j]] = [arr[j], arr[i]]
+  }
+  return arr
+}
+
+// Rotates 8 times a day — a new seed (and so a new shuffle order) kicks in
+// every 3 hours automatically. No admin work needed: this just changes
+// which of your tagged/in-stock products get shown, on its own, on a timer.
+const ROTATION_HOURS = 3
+function currentRotationSeed(): number {
+  const hoursSinceEpoch = Math.floor(Date.now() / (1000 * 60 * 60))
+  return Math.floor(hoursSinceEpoch / ROTATION_HOURS)
+}
+
 export default async function HomePage() {
   // Fetched directly on the server — same data source the API route uses,
   // no client-side fetch-after-mount, no loading flash.
   const allProducts = await loadProducts()
-  const featured = allProducts.filter(p => p.featured).slice(0, 4)
-  const newArrivals = allProducts.filter(p => p.new_arrival).slice(0, 4)
+  const inStock = allProducts.filter(p => p.stock > 0)
+  const seed = currentRotationSeed()
+
+  // The product grid uses `repeat(auto-fill, minmax(220px, 1fr))`, which on
+  // wide screens fits 5 columns, not 4 — with only 4 products, that 5th
+  // column sits empty. Showing 5 products fills the row properly instead.
+  const HOMEPAGE_SECTION_SIZE = 5
+
+  // Featured: prefer products actually tagged `featured` in admin, but
+  // spread across categories rather than showing whichever category has
+  // the most tagged products. If fewer categories are represented among
+  // tagged products than HOMEPAGE_SECTION_SIZE, top up with other in-stock
+  // products so the section still reflects the catalogue's real range. The
+  // seed rotates automatically every few hours, so which tagged products
+  // get shown shifts over time without any admin work.
+  const taggedFeatured = inStock.filter(p => p.featured)
+  let featured = pickDiverse(taggedFeatured, HOMEPAGE_SECTION_SIZE, undefined, seed)
+  if (featured.length < HOMEPAGE_SECTION_SIZE) {
+    const usedIds = new Set(featured.map(p => p.id))
+    const topUp = pickDiverse(inStock, HOMEPAGE_SECTION_SIZE - featured.length, usedIds, seed)
+    featured = [...featured, ...topUp]
+  }
+
+  // New Arrivals: same approach, but exclude whatever Featured already
+  // shows so the two sections don't end up displaying identical products.
+  // A different seed offset is used so the two sections don't always
+  // rotate in lockstep with each other.
+  const featuredIds = new Set(featured.map(p => p.id))
+  const taggedNew = inStock.filter(p => p.new_arrival)
+  let newArrivals = pickDiverse(taggedNew, HOMEPAGE_SECTION_SIZE, featuredIds, seed + 1)
+  if (newArrivals.length < HOMEPAGE_SECTION_SIZE) {
+    const usedIds = new Set([...featuredIds, ...newArrivals.map(p => p.id)])
+    const topUp = pickDiverse(inStock, HOMEPAGE_SECTION_SIZE - newArrivals.length, usedIds, seed + 1)
+    newArrivals = [...newArrivals, ...topUp]
+  }
 
   return (
     <div style={{ overflowX: 'hidden' }}>
@@ -94,7 +207,7 @@ export default async function HomePage() {
               All Products <ArrowRight size={14} />
             </Link>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 24 }}>
+          <div className="home-product-grid">
             {featured.map((product, i) => (
               <ProductCard key={product.id} product={product} index={i} />
             ))}
@@ -114,7 +227,7 @@ export default async function HomePage() {
               See All <ArrowRight size={14} />
             </Link>
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 24 }}>
+          <div className="home-product-grid">
             {newArrivals.map((product, i) => (
               <ProductCard key={product.id} product={product} index={i} />
             ))}
