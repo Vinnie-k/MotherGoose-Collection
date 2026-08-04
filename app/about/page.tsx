@@ -18,8 +18,14 @@ export default function AboutPage() {
     <div className="pt-20 min-h-screen">
       {/* Hero */}
       <section className="relative h-[60vh] flex items-center overflow-hidden">
-        <div className="absolute inset-0 bg-cover bg-center"
-          style={{ backgroundImage: `url('https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=80')` }} />
+        <Image
+          src="https://images.unsplash.com/photo-1490481651871-ab68de25d43d?w=1600&q=80"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+        />
         <div className="absolute inset-0 bg-gradient-to-r from-obsidian via-obsidian/70 to-transparent" />
         <div className="relative z-10 max-w-7xl mx-auto px-6">
           <p className="text-gold text-xs tracking-[0.5em] uppercase mb-4 stagger-1">Our Story</p>

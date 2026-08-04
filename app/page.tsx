@@ -147,7 +147,21 @@ export default async function HomePage() {
 
       {/* ── HERO ── */}
       <section style={{ position: 'relative', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        {/* Using next/image with priority instead of a CSS background-image:
+            CSS backgrounds bypass Next.js's image optimizer entirely (no
+            resizing, no WebP conversion, no preloading), which was the
+            single biggest driver of a slow First/Largest Contentful Paint
+            on mobile — this is the largest thing painted on the page, so
+            it directly sets the LCP timing. `priority` tells the browser to
+            fetch this immediately, ahead of everything else non-critical. */}
+        <Image
+          src="https://images.unsplash.com/photo-1441986300917-64674bd600d8?w=1600&q=80"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+        />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, #0A0A0F, rgba(10,10,15,0.75), rgba(10,10,15,0.15))' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #0A0A0F, transparent, transparent)' }} />
 

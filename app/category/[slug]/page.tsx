@@ -72,7 +72,14 @@ export default function CategoryPage() {
     <div style={{ minHeight: '100vh' }}>
       {/* Banner */}
       <div style={{ position: 'relative', height: '60vh', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url('${banner.image}')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        <Image
+          src={banner.image}
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+        />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(10,10,15,0.92), rgba(10,10,15,0.6), rgba(10,10,15,0.2))' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #0A0A0F, transparent)' }} />
         <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', maxWidth: 1280, margin: '0 auto', padding: '0 24px 48px' }}>

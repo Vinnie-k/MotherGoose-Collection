@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
 import { ArrowRight } from 'lucide-react'
 import ProductCard from '@/components/ProductCard'
 import { ProductGridSkeleton } from '@/components/Skeletons'
@@ -30,7 +31,14 @@ export default function NewArrivalsPage() {
     <div style={{ paddingTop: 80, minHeight: '100vh' }}>
       {/* Banner */}
       <div style={{ position: 'relative', height: '40vh', overflow: 'hidden' }}>
-        <div style={{ position: 'absolute', inset: 0, backgroundImage: `url('https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600&q=80')`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        <Image
+          src="https://images.unsplash.com/photo-1483985988355-763728e1935b?w=1600&q=80"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          style={{ objectFit: 'cover', objectPosition: 'center' }}
+        />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(10,10,15,0.95), rgba(10,10,15,0.5), rgba(10,10,15,0.2))' }} />
         <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, #0A0A0F, transparent)' }} />
         <div style={{ position: 'relative', zIndex: 10, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'flex-end', maxWidth: 1280, margin: '0 auto', padding: '0 24px 40px' }}>
