@@ -62,7 +62,9 @@ export default function ProductCard({ product, index = 0 }: { product: Product; 
           src={imgSrc}
           alt={product.name}
           fill
-          sizes="(max-width: 768px) 50vw, (max-width: 1280px) 25vw, 20vw"
+          sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, (max-width: 1024px) 33vw, (max-width: 1280px) 25vw, 20vw"
+          quality={85}
+          priority={index < 4}
           onError={() => setImgError(true)}
           style={{ objectFit: 'cover', objectPosition: 'center', transition: 'transform 0.7s ease' }}
           className="product-img"

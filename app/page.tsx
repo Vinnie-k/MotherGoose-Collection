@@ -195,9 +195,15 @@ export default async function HomePage() {
             <Link key={cat.slug} href={`/category/${cat.slug}`}
               className={`stagger-${i + 1} category-card`}
               style={{ textDecoration: 'none', position: 'relative', overflow: 'hidden', aspectRatio: '2/3', transition: 'all 0.3s' }}>
-              <Image className="cat-img" src={cat.image} alt={cat.label}
-                fill sizes="(max-width: 768px) 50vw, 180px"
-                style={{ objectFit: 'cover' }} />
+              <Image 
+                className="cat-img" 
+                src={cat.image} 
+                alt={cat.label}
+                fill 
+                sizes="(max-width: 768px) 50vw, (max-width: 1280px) 33vw, 360px"
+                priority={i < 3}
+                style={{ objectFit: 'cover' }} 
+              />
               {/* Gradient overlay */}
               <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(10,10,15,0.85) 0%, rgba(10,10,15,0.2) 50%, transparent 100%)' }} />
               {/* Label */}
