@@ -67,6 +67,14 @@ export function verifyToken(token: string): { sub: string; role: string } | null
 }
 
 export async function validateCredentials(username: string, password: string): Promise<boolean> {
+  console.log('[auth-debug]', {
+  usernameEnvSet: !!process.env.ADMIN_USERNAME,
+  usernameMatches: username.trim() === ADMIN_USERNAME.trim(),
+  hashSet: !!ADMIN_PASSWORD_HASH,
+  hashLen: ADMIN_PASSWORD_HASH?.length,
+  hashPrefix: ADMIN_PASSWORD_HASH?.slice(0, 4),
+  plainSet: !!ADMIN_PASSWORD_PLAIN,
+})
   // Username must match (trimmed, case-sensitive)
   if (username.trim() !== ADMIN_USERNAME.trim()) return false
 
@@ -75,8 +83,8 @@ export async function validateCredentials(username: string, password: string): P
     try {
       const bcrypt = await import('bcryptjs')
       return await bcrypt.compare(password, ADMIN_PASSWORD_HASH)
-    } catch {
-      console.error('bcryptjs not installed. Run: npm install bcryptjs')
+    }catch (e) {
+      console.error('bcrypt error', e)
       return false
     }
   }
