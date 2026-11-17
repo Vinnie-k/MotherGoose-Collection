@@ -2,7 +2,17 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import Image from 'next/image'
-import { RefreshCw, ChevronDown, ChevronUp, Package, MessageCircle, Search, X, Printer } from 'lucide-react'
+import { RefreshCw,
+  ChevronDown,
+  ChevronUp,
+  Package,
+  MessageCircle,
+  Search,
+  X,
+  Printer,
+  CheckCircle,
+  Loader2,
+} from 'lucide-react'
 import AdminSidebar from '@/components/admin/AdminSidebar'
 import { formatPrice } from '@/lib/format'
 import type { Order } from '@/lib/order-store'
@@ -207,6 +217,10 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState('')
   const [expanded, setExpanded] = useState<string | null>(null)
   const [updatingId, setUpdatingId] = useState<string | null>(null)
+  const [paymentUpdatingId, setPaymentUpdatingId] = useState<string | null>(null)
+  const [paymentFeedback, setPaymentFeedback] = useState<
+  Record<string, { type: 'success' | 'error'; message: string }>
+>({})
   const [filterStatus, setFilterStatus] = useState('')
   const [filterMethod, setFilterMethod] = useState('')
   const [filterSupplier, setFilterSupplier] = useState('')
@@ -263,6 +277,85 @@ export default function AdminOrdersPage() {
       setUpdatingId(null)
     }
   }
+  const markAsPaid = async (order: Order) => {
+  if (order.paymentStatus === 'paid') return
+
+  const confirmed = window.confirm(
+    `Have you verified that payment for order ${order.orderNumber} has actually been received?`
+  )
+
+  if (!confirmed) return
+
+  setPaymentUpdatingId(order.id)
+  setPaymentFeedback((prev) => {
+    const next = { ...prev }
+    delete next[order.id]
+    return next
+  })
+
+  try {
+    const res = await fetch('/api/orders/mark-paid', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include',
+      body: JSON.stringify({
+        orderNumber: order.orderNumber,
+      }),
+    })
+
+    const data = await res.json().catch(() => ({}))
+
+    // The API can return an error even though payment was
+    // recorded as paid, for example if Meta tracking fails.
+    const paymentWasMarked =
+      data.paymentStatus === 'paid' ||
+      data.purchaseSent === true ||
+      (res.ok && data.success === true)
+
+    if (paymentWasMarked) {
+      setOrders((prev) =>
+        prev.map((o) =>
+          o.id === order.id
+            ? { ...o, paymentStatus: 'paid' }
+            : o
+        )
+      )
+    }
+
+    if (!res.ok) {
+      setPaymentFeedback((prev) => ({
+        ...prev,
+        [order.id]: {
+          type: 'error',
+          message: data.error || 'Payment update failed. Refresh and check the order.',
+        },
+      }))
+      return
+    }
+
+    setPaymentFeedback((prev) => ({
+      ...prev,
+      [order.id]: {
+        type: 'success',
+        message: data.alreadySent
+          ? 'Payment is recorded. Meta Purchase event was already sent.'
+          : 'Payment recorded and Meta Purchase event accepted.',
+      },
+    }))
+  } catch {
+    setPaymentFeedback((prev) => ({
+      ...prev,
+      [order.id]: {
+        type: 'error',
+        message: 'Request failed. Refresh the orders page to check the payment status.',
+      },
+    }))
+  } finally {
+    setPaymentUpdatingId(null)
+  }
+}
 
   const formatWhatsAppNumber = (phone: string) => {
     let num = phone.replace(/\D/g, '')
@@ -628,6 +721,88 @@ export default function AdminOrdersPage() {
                             {order.deliveryOption === 'same_day' ? 'Nairobi only — order before 12 PM' : 'Delivery details unavailable'}
                           </p>
                         </div>
+
+                        {/* Payment verification and Meta Purchase tracking */}
+<div style={{
+  background: 'rgba(74,222,128,0.04)',
+  border: '1px solid rgba(74,222,128,0.18)',
+  padding: 16,
+}}>
+  <p style={{
+    color: 'rgba(245,242,236,0.4)',
+    fontSize: '0.65rem',
+    letterSpacing: '0.15em',
+    textTransform: 'uppercase',
+    marginBottom: 10,
+  }}>
+    Payment Verification
+  </p>
+
+  {order.paymentStatus === 'paid' ? (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+      <CheckCircle size={17} color="#4ade80" />
+      <span style={{ color: '#4ade80', fontSize: '0.8rem', fontWeight: 600 }}>
+        Payment Verified
+      </span>
+    </div>
+  ) : (
+    <button
+      onClick={() => markAsPaid(order)}
+      disabled={paymentUpdatingId === order.id}
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 8,
+        width: '100%',
+        padding: '11px 14px',
+        background: paymentUpdatingId === order.id
+          ? 'rgba(74,222,128,0.1)'
+          : '#4ade80',
+        border: 'none',
+        color: '#0a0a0f',
+        cursor: paymentUpdatingId === order.id ? 'not-allowed' : 'pointer',
+        fontSize: '0.75rem',
+        fontWeight: 700,
+        opacity: paymentUpdatingId === order.id ? 0.7 : 1,
+      }}
+    >
+      {paymentUpdatingId === order.id ? (
+        <>
+          <Loader2 size={14} />
+          Processing...
+        </>
+      ) : (
+        <>
+          <CheckCircle size={14} />
+          Mark as Paid
+        </>
+      )}
+    </button>
+  )}
+
+  {paymentFeedback[order.id] && (
+    <p style={{
+      color: paymentFeedback[order.id].type === 'success'
+        ? '#4ade80'
+        : '#f87171',
+      fontSize: '0.72rem',
+      lineHeight: 1.5,
+      marginTop: 10,
+    }}>
+      {paymentFeedback[order.id].message}
+    </p>
+  )}
+
+  <p style={{
+    color: 'rgba(245,242,236,0.3)',
+    fontSize: '0.68rem',
+    lineHeight: 1.5,
+    marginTop: 10,
+  }}>
+    Only mark an order as paid after independently verifying that the money has been received.
+  </p>
+</div>
 
                         <div>
                           <p style={{ color: 'rgba(245,242,236,0.4)', fontSize: '0.65rem', letterSpacing: '0.15em', textTransform: 'uppercase', marginBottom: 12 }}>Delivery Address</p>

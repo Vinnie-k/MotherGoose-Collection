@@ -168,14 +168,6 @@ export default function CartPage() {
         }
 
         setOrderNumber(orderNum)
-        ;(window as any).fbq?.('track', 'Purchase', {
-          content_ids: state.items.map((i) => i.product.id),
-          content_type: 'product',
-          contents: state.items.map((i) => ({ id: i.product.id, quantity: i.quantity })),
-          num_items: state.itemCount,
-          value: Number(data.order.total),
-          currency: 'KES',
-        }, { eventID: orderNum })
         clearCart()
         setStep('confirmation')
       } catch {

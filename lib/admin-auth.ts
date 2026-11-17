@@ -5,7 +5,7 @@ const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin'
 // Support both bcrypt hash (preferred) and plain password (legacy fallback)
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || null
 const ADMIN_PASSWORD_PLAIN = process.env.ADMIN_PASSWORD || null
-const JWT_SECRET = process.env.JWT_SECRET || 'mothergoose-secret-change-this-in-production'
+const JWT_SECRET = process.env.JWT_SECRET || '0c8d3d1f8baf7e24f8e2d7a6c91b5e8f4d2a7c1e9b6f3d8a5c7e1f9b2d4a6c8e7f3b1d9a5c2e8f6b4d7a1e9c3f5b8d2a7e4c1f9b6d3a8e5c2f7b4d1a9e6c3f8b5d2a7'
 
 if (process.env.NODE_ENV === 'production') {
   if (!ADMIN_PASSWORD_HASH && !ADMIN_PASSWORD_PLAIN) {

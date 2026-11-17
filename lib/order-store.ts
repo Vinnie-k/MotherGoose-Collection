@@ -19,7 +19,7 @@ export interface Order {
   orderNumber: string
   status: 'pending' | 'confirmed' | 'processing' | 'dispatched' | 'delivered' | 'cancelled'
   paymentMethod: 'whatsapp' | 'cod'
-  paymentStatus: 'pending' | 'whatsapp'
+  paymentStatus: 'pending' | 'whatsapp'| 'paid'
   items: OrderItem[]
   subtotal: number
   shipping: number
@@ -353,4 +353,153 @@ export async function getOrderByNumber(orderNumber: string): Promise<Order | nul
   }
   const orders = await readFile()
   return orders.find(o => o.orderNumber === orderNumber) ?? null
+}
+
+export async function prepareOrderForMetaPurchase(
+  orderNumber: string,
+  eventId: string
+): Promise<{
+  order: Order
+  shouldSend: boolean
+  alreadySent: boolean
+  claimToken: string | null
+} | null> {
+  const sb = await getSupabase()
+
+  if (!sb) {
+    throw new Error('Supabase is unavailable. Cannot safely confirm payment.')
+  }
+
+  if (!orderNumber.trim() || !/^[a-zA-Z0-9._:-]{1,200}$/.test(eventId)) {
+    throw new Error('Invalid order number or Meta event ID.')
+  }
+
+  const now = new Date()
+  const updatedAt = now.toISOString()
+
+  // Claims expire after 10 minutes.
+  const claimExpiredBefore = new Date(
+    now.getTime() - 10 * 60 * 1000
+  ).toISOString()
+
+  // Atomically claim the event.
+  // An existing claim can only be replaced after it expires.
+  const { data, error } = await sb
+    .from('orders')
+    .update({
+      payment_status: 'paid',
+      meta_purchase_event_id: eventId,
+      meta_purchase_claimed_at: updatedAt,
+      updated_at: updatedAt,
+    })
+    .eq('order_number', orderNumber)
+    .neq('status', 'cancelled')
+    .is('meta_purchase_sent_at', null)
+    .or(`meta_purchase_event_id.is.null,meta_purchase_event_id.eq.${eventId}`)
+    .or(
+      `meta_purchase_claimed_at.is.null,meta_purchase_claimed_at.lt.${claimExpiredBefore}`
+    )
+    .select('*')
+
+  if (error) {
+    console.error('[OrderStore] prepare Meta purchase error:', error)
+    throw new Error('Could not prepare the order for Meta tracking.')
+  }
+
+  if (data && data.length > 0) {
+    const row = data[0] as Record<string, unknown>
+    const order = rowToOrder(row)
+
+    const claimToken = row.meta_purchase_claimed_at
+      ? String(row.meta_purchase_claimed_at)
+      : null
+
+    if (!claimToken) {
+      throw new Error('Meta event was claimed without a valid claim token.')
+    }
+
+    return {
+      order,
+      shouldSend: true,
+      alreadySent: false,
+      claimToken,
+    }
+  }
+
+  // No claim was acquired. Check the existing order.
+  const { data: existing, error: fetchError } = await sb
+    .from('orders')
+    .select('*')
+    .eq('order_number', orderNumber)
+    .maybeSingle()
+
+  if (fetchError) {
+    console.error('[OrderStore] Meta purchase lookup error:', fetchError)
+    throw new Error('Could not verify the Meta purchase status.')
+  }
+
+  if (!existing) {
+    return null
+  }
+
+  const row = existing as Record<string, unknown>
+  const order = rowToOrder(row)
+
+  if (row.meta_purchase_sent_at) {
+    return {
+      order,
+      shouldSend: false,
+      alreadySent: true,
+      claimToken: null,
+    }
+  }
+
+  // Another request owns the active claim, or the event ID conflicts.
+  return {
+    order,
+    shouldSend: false,
+    alreadySent: false,
+    claimToken: null,
+  }
+}
+
+export async function markMetaPurchaseSent(
+  orderNumber: string,
+  eventId: string,
+  claimToken: string
+): Promise<void> {
+  const sb = await getSupabase()
+
+  if (!sb) {
+    throw new Error('Supabase is unavailable.')
+  }
+
+  if (!claimToken) {
+    throw new Error('A valid Meta purchase claim token is required.')
+  }
+
+  // Only the request holding the current claim can mark the event as sent.
+  const { data, error } = await sb
+    .from('orders')
+    .update({
+      meta_purchase_sent_at: new Date().toISOString(),
+      meta_purchase_claimed_at: null,
+      updated_at: new Date().toISOString(),
+    })
+    .eq('order_number', orderNumber)
+    .eq('meta_purchase_event_id', eventId)
+    .eq('meta_purchase_claimed_at', claimToken)
+    .is('meta_purchase_sent_at', null)
+    .select('id')
+
+  if (error || !data || data.length === 0) {
+    console.error(
+      '[OrderStore] Could not mark Meta purchase as sent:',
+      error
+    )
+
+    throw new Error(
+      'Meta event was accepted, but its claim was lost or its sent status could not be saved.'
+    )
+  }
 }
