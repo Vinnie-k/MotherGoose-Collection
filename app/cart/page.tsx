@@ -173,7 +173,7 @@ export default function CartPage() {
           content_type: 'product',
           contents: state.items.map((i) => ({ id: i.product.id, quantity: i.quantity })),
           num_items: state.itemCount,
-          value: total,
+          value: Number(data.order.total),
           currency: 'KES',
         }, { eventID: orderNum })
         clearCart()
