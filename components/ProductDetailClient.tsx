@@ -63,6 +63,16 @@ export default function ProductDetailClient({
     setSelectedImage(0)
   }, [selectedColor])
 
+  useEffect(() => {
+    (window as any).fbq?.('track', 'ViewContent', {
+      content_ids: [product.id],
+      content_type: 'product',
+      content_name: product.name,
+      value: product.price,
+      currency: 'KES',
+    })
+  }, [product.id]) // eslint-disable-line react-hooks/exhaustive-deps
+
   // Build image list: show selected color images first (if any),
   // then default images, then other color images — without duplicates.
   const displayImages = (() => {
@@ -111,6 +121,13 @@ export default function ProductDetailClient({
     if (selectedSizeEntry && selectedSizeEntry.stock === 0) { toast('This size is out of stock', 'error'); return }
     const imageForCart = displayImages[selectedImage] || product.images[0] || ''
     addItem(product, quantity, selectedSize || undefined, selectedColor || undefined, imageForCart)
+    ;(window as any).fbq?.('track', 'AddToCart', {
+      content_ids: [product.id],
+      content_type: 'product',
+      content_name: product.name,
+      value: product.price * quantity,
+      currency: 'KES',
+    })
     setAdded(true)
     toast(`${product.name} added to your bag`, 'success')
     setTimeout(() => setAdded(false), 2000)

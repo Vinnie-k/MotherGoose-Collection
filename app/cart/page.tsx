@@ -60,6 +60,13 @@ export default function CartPage() {
     }
     setFieldErrors({})
     await refreshStock()
+    ;(window as any).fbq?.('track', 'InitiateCheckout', {
+      content_ids: state.items.map((i) => i.product.id),
+      content_type: 'product',
+      num_items: state.itemCount,
+      value: state.total,
+      currency: 'KES',
+    })
     setStep('payment')
   }
 
@@ -161,6 +168,14 @@ export default function CartPage() {
         }
 
         setOrderNumber(orderNum)
+        ;(window as any).fbq?.('track', 'Purchase', {
+          content_ids: state.items.map((i) => i.product.id),
+          content_type: 'product',
+          contents: state.items.map((i) => ({ id: i.product.id, quantity: i.quantity })),
+          num_items: state.itemCount,
+          value: total,
+          currency: 'KES',
+        }, { eventID: orderNum })
         clearCart()
         setStep('confirmation')
       } catch {
