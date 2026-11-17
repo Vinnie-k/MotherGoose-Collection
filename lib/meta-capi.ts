@@ -75,8 +75,9 @@ export async function sendMetaPurchase(
 
     const email = normalize(input.customer?.email)
 
-    const phone = input.customer?.phone
-      ?.replace(/\D/g, '')
+    // Digits only, with country code. Numbers starting with 0 are treated as Kenyan (254).
+    let phone = input.customer?.phone?.replace(/\D/g, '')
+    if (phone?.startsWith('0')) phone = '254' + phone.slice(1)
 
     const firstName = normalize(input.customer?.firstName)
     const lastName = normalize(input.customer?.lastName)
@@ -113,7 +114,7 @@ export async function sendMetaPurchase(
       action_source: 'website',
       user_data: userData,
       custom_data: {
-        currency: 'KES',
+        currency: process.env.META_CURRENCY || 'KES',
         value: input.total,
         order_id: input.orderNumber,
         content_type: 'product',

@@ -45,6 +45,22 @@ export async function POST(request: NextRequest) {
     const shippingFee = 0
     const serverTotal = serverSubtotal + shippingFee
 
+    // Capture Meta matching data from the CUSTOMER's browser now, so the
+    // admin's later "Mark as paid" click doesn't send the admin's details.
+    // Never trust tracking values supplied in the request body.
+    const cookieHeader = request.headers.get('cookie') || ''
+    const readCookie = (name: string) => {
+      const match = cookieHeader.match(new RegExp(`(?:^|;\\s*)${name}=([^;]*)`))
+      if (!match) return undefined
+      try { return decodeURIComponent(match[1]) } catch { return undefined }
+    }
+    const tracking = {
+      fbp: readCookie('_fbp'),
+      fbc: readCookie('_fbc'),
+      clientIp: ip && ip !== 'unknown' ? ip : undefined,
+      userAgent: request.headers.get('user-agent') || undefined,
+    }
+
     const order = await createOrder({
       items: body.items.map((item: { productId: string; name: string; quantity: number; image: string }) => {
         const product = products.find((p) => p.id === item.productId)!
@@ -54,7 +70,13 @@ export async function POST(request: NextRequest) {
           admin_source_tag: product.admin_source_tag ?? null,
         }
       }),
-      customer: body.customer,
+      customer: {
+        firstName: String(body.customer.firstName ?? ''),
+        lastName: String(body.customer.lastName ?? ''),
+        email: String(body.customer.email),
+        phone: String(body.customer.phone ?? ''),
+        tracking,
+      },
       address: body.address,
       subtotal: serverSubtotal,
       shipping: shippingFee,

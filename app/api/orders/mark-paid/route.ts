@@ -63,28 +63,13 @@ export async function POST(request: NextRequest) {
 
     const order = prepared.order
 
-    const forwardedFor = request.headers.get('x-forwarded-for')
-    const clientIp = forwardedFor?.split(',')[0]?.trim()
-
-    const cookieHeader = request.headers.get('cookie') || ''
-
-    const getCookie = (name: string) => {
-      const match = cookieHeader.match(
-        new RegExp(`(?:^|;\\s*)${name}=([^;]*)`)
-      )
-
-      if (!match) return undefined
-
-      try {
-        return decodeURIComponent(match[1])
-      } catch {
-        return undefined
-      }
-    }
+    // Matching data was captured from the customer at checkout.
+    // Do NOT use this request's IP / user agent / cookies: they belong to the admin.
+    const tracking = order.customer.tracking
 
     const sourceUrl =
+      process.env.NEXT_PUBLIC_SITE_URL ||
       request.headers.get('origin') ||
-      request.headers.get('referer') ||
       ''
 
     const result = await sendMetaPurchase({
@@ -107,10 +92,10 @@ export async function POST(request: NextRequest) {
       })),
 
       sourceUrl,
-      clientIp,
-      userAgent: request.headers.get('user-agent') || undefined,
-      fbp: getCookie('_fbp'),
-      fbc: getCookie('_fbc'),
+      clientIp: tracking?.clientIp,
+      userAgent: tracking?.userAgent,
+      fbp: tracking?.fbp,
+      fbc: tracking?.fbc,
     })
 
     if (!result.success) {

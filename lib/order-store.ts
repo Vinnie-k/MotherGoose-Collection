@@ -29,6 +29,15 @@ export interface Order {
     lastName: string
     email: string
     phone: string
+    // Captured server-side at checkout from the customer's own browser.
+    // Used for Meta Conversions API matching. Stored inside the existing
+    // `customer` JSON column, so no database migration is needed.
+    tracking?: {
+      fbp?: string
+      fbc?: string
+      clientIp?: string
+      userAgent?: string
+    }
   }
   address: {
     street: string
