@@ -2,20 +2,15 @@ import { NextRequest } from 'next/server'
 import crypto from 'crypto'
 
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin'
-// Support both bcrypt hash (preferred) and plain password (legacy fallback)
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || null
-const ADMIN_PASSWORD_PLAIN = process.env.ADMIN_PASSWORD || null
-const JWT_SECRET = process.env.JWT_SECRET || '0c8d3d1f8baf7e24f8e2d7a6c91b5e8f4d2a7c1e9b6f3d8a5c7e1f9b2d4a6c8e7f3b1d9a5c2e8f6b4d7a1e9c3f5b8d2a7e4c1f9b6d3a8e5c2f7b4d1a9e6c3f8b5d2a7'
-
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || ''
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) throw new Error('JWT_SECRET is not set')
 if (process.env.NODE_ENV === 'production') {
-  if (!ADMIN_PASSWORD_HASH && !ADMIN_PASSWORD_PLAIN) {
-    console.error('⚠️  SECURITY: No admin password set. Set ADMIN_PASSWORD_HASH in your environment variables.')
-  }
   if (!ADMIN_PASSWORD_HASH) {
-    console.error('⚠️  SECURITY: ADMIN_PASSWORD_HASH not set — using plain text password. Migrate to bcrypt: see .env.example')
+    console.error('⚠️  SECURITY: ADMIN_PASSWORD_HASH is not set — admin login is disabled.')
   }
-  if (!process.env.JWT_SECRET) {
-    console.error('⚠️  SECURITY: JWT_SECRET env var not set — using insecure default. Generate: openssl rand -hex 32')
+  if (!JWT_SECRET) {
+    console.error('⚠️  SECURITY: JWT_SECRET is not set — admin login is disabled. Generate one with: openssl rand -hex 32')
   }
 }
 
@@ -29,6 +24,8 @@ function base64urlDecode(input: string): string {
 }
 
 export function createToken(username: string): string {
+  if (!JWT_SECRET) throw new Error('JWT_SECRET is not set')
+
   const header = base64urlEncode(JSON.stringify({ alg: 'HS256', typ: 'JWT' }))
   const payload = base64urlEncode(JSON.stringify({
     sub: username,
@@ -45,6 +42,8 @@ export function createToken(username: string): string {
 
 export function verifyToken(token: string): { sub: string; role: string } | null {
   try {
+    if (!JWT_SECRET) return null
+
     const parts = token.split('.')
     if (parts.length !== 3) return null
     const [header, payload, signature] = parts
@@ -70,23 +69,16 @@ export async function validateCredentials(username: string, password: string): P
   // Username must match (trimmed, case-sensitive)
   if (username.trim() !== ADMIN_USERNAME.trim()) return false
 
-  // Prefer bcrypt hash comparison
-  if (ADMIN_PASSWORD_HASH) {
-    try {
-      const bcrypt = await import('bcryptjs')
-      return await bcrypt.compare(password, ADMIN_PASSWORD_HASH)
-    }catch (e) {
-      console.error('bcrypt error', e)
-      return false
-    }
-  }
+  // Password is checked against a bcrypt hash only
+  if (!ADMIN_PASSWORD_HASH) return false
 
-  // Legacy fallback: plain text password (not recommended)
-  if (ADMIN_PASSWORD_PLAIN) {
-    return password === ADMIN_PASSWORD_PLAIN
+  try {
+    const bcrypt = await import('bcryptjs')
+    return await bcrypt.compare(password, ADMIN_PASSWORD_HASH)
+  } catch (e) {
+    console.error('bcrypt error', e)
+    return false
   }
-
-  return false
 }
 
 export function getTokenFromRequest(request: NextRequest): string | null {

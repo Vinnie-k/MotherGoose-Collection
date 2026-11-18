@@ -1,9 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 
-// MUST match the fallback in lib/admin-auth.ts, otherwise a token signed at login
-// is rejected here and you get bounced back to the login page.
-// Best fix: set JWT_SECRET in Vercel so this fallback is never used.
-const JWT_SECRET = process.env.JWT_SECRET || '0c8d3d1f8baf7e24f8e2d7a6c91b5e8f4d2a7c1e9b6f3d8a5c7e1f9b2d4a6c8e7f3b1d9a5c2e8f6b4d7a1e9c3f5b8d2a7e4c1f9b6d3a8e5c2f7b4d1a9e6c3f8b5d2a7'
+
+const JWT_SECRET = process.env.JWT_SECRET
+if (!JWT_SECRET) throw new Error('JWT_SECRET is not set')
 
 function base64urlDecode(str: string): Uint8Array {
   // Pad base64url to standard base64 then decode
@@ -15,6 +14,8 @@ function base64urlDecode(str: string): Uint8Array {
 
 async function verifyJwt(token: string): Promise<boolean> {
   try {
+    if (!JWT_SECRET) return false
+
     const parts = token.split('.')
     if (parts.length !== 3) return false
     const [header, payload, signature] = parts

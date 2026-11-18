@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { loadOrders } from '@/lib/order-store'
+import { isAdminAuthenticated } from '@/lib/admin-auth'
 
 export async function GET(req: NextRequest) {
   try {
-    const token = req.cookies.get('admin-token')?.value
-    if (!token) {
+    if (!isAdminAuthenticated(req)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 

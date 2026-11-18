@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { isAdminAuthenticated } from '@/lib/admin-auth'
 
 interface StatusEmailPayload {
   to: string
@@ -170,6 +171,10 @@ function buildStatusEmailHtml(data: StatusEmailPayload): string {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAdminAuthenticated(request)) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
   try {
     const body: StatusEmailPayload = await request.json()
 

@@ -9,6 +9,6 @@ export default function robots(): MetadataRoute.Robots {
         disallow: ['/api/', '/cart', '/wishlist', '/mgmt-heron'],
       },
     ],
-    sitemap: 'https://mothergoosecollection.com/sitemap.xml',
+    sitemap: 'https://mothergoosecollection254.co.ke/sitemap.xml',
   }
 }
